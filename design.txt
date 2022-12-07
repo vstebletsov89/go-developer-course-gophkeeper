@@ -1,0 +1,52 @@
+Сервер
+
+Первый микросервис только для авторизации.
+
+    регистрация, аутентификация и авторизация пользователей;
+
+        Register - записывает пользователя в БД
+
+        Login - возвращает токен авторизации (думаю попробовать поработать с jwt-go)
+
+        service Auth {
+            rpc Register(RegisterRequest) returns(RegisterResponse);
+            rpc Login(LoginRequest) returns(LoginResponse);
+        }
+----------------------------------------------------------------------------------
+Второй микросервис для основной логики.
+
+    хранение приватных данных;
+
+        буду использовать PostgreSQL, т.к. с ним в основном работал в спринтах
+        для миграций буду использовать библиотеку goose
+
+    синхронизация данных между несколькими авторизованными клиентами одного владельца;
+
+        на сервере будет воркер пул, похожий на реализацию в shortener,
+        чтобы проверять если есть новые данные для синхронизации от клиента и записывать/обновлять их в БД
+        TODO: посмотреть вебинар про cdc
+
+    передача приватных данных владельцу по запросу.
+
+    обеспечение безопасности передачи и хранения данных;
+
+        TLS сертификаты совместно с grpc сервером  - credentials package
+
+service Gophkeeper {
+    rpc AddPrivateData(AddPrivateDataRequest) returns(AddPrivateDataResponse);
+    rpc GetPrivateData(GetPrivateDataRequest) returns(GetPrivateDataResponse);
+    rpc DeletePrivateData(DeletePrivateDataRequest) returns(DeletePrivateDataResponse);
+    rpc SyncPrivateData(SyncPrivateDataRequest) returns(SyncPrivateDataResponse); // принудительная синхронизация от пользователя
+}
+
+
+Клиент
+
+Будет использовать сгенерированный код от protoc.
+
+Модели
+
+TODO описание моделей
+
+TODO Посмотреть все пропущенные семинары
+
