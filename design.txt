@@ -1,5 +1,16 @@
-Сервер
+ВОПРОС: комментарий по треку шортенер в ходе код ревью:
 
+func (s *ShortenerServer) AddBatch(ctx context.Context, in *pb.AddBatchRequest) (*pb.AddBatchResponse, error) {
+	userID := service.ExtractUserIDFromContext(ctx)
+	"Здесь логика дублируется несколько http - это признак того что ее следует отправить в слой сервиса"
+
+ВОПРОС: использование контекста для хранения текущего пользователя это ок или нет?
+
+------------------------------------------------------------------------------------------------------------------------
+GOPHKEEPER DESIGN
+------------------------------------------------------------------------------------------------------------------------
+Сервер
+------
 Первый микросервис только для авторизации.
 
     регистрация, аутентификация и авторизация пользователей;
@@ -12,6 +23,8 @@
             rpc Register(RegisterRequest) returns(RegisterResponse);
             rpc Login(LoginRequest) returns(LoginResponse);
         }
+
+
 ----------------------------------------------------------------------------------
 Второй микросервис для основной логики.
 
@@ -33,22 +46,119 @@
         TLS сертификаты совместно с grpc сервером  - credentials package
 
 service Gophkeeper {
-    rpc AddPrivateData(AddPrivateDataRequest) returns(AddPrivateDataResponse);
-    rpc GetPrivateData(GetPrivateDataRequest) returns(GetPrivateDataResponse);
-    rpc DeletePrivateData(DeletePrivateDataRequest) returns(DeletePrivateDataResponse);
-    rpc SyncPrivateData(SyncPrivateDataRequest) returns(SyncPrivateDataResponse); // принудительная синхронизация от пользователя
+    rpc AddData(AddDataRequest) returns(AddDataResponse);
+    rpc GetData(GetDataRequest) returns(GetDataResponse);
+    rpc DeleteData(DeleteDataRequest) returns(DeleteDataResponse);
+    rpc SyncData(SyncDataRequest) returns(SyncDataResponse); // принудительная синхронизация от пользователя
 }
 
-
+------
 Клиент
-
+------
 Будет использовать сгенерированный код от protoc.
 
+--------
+Схема БД
+--------
+
+CREATE TABLE IF NOT EXISTS "users" (
+    id       text NOT NULL PRIMARY KEY,         // уникальный идентификатор пользователя (uuid)
+    login    text NOT NULL UNIQUE,              // логин пользователя уникальный
+    password text NOT NULL,
+    secret   text NOT NULL                      // зашифрованный мастер-пароль(нужен или нет?)
+);
+
+CREATE TABLE IF NOT EXISTS "data" (
+    id          text NOT NULL PRIMARY KEY, // уникальный идентификатор данных (uuid)
+    user        text NOT NULL,             // идентификатор пользователя (uuid)
+    type        text NOT NULL,
+    data        bytea NOT NULL             // буду хранить текущий тип как бинарные данные
+);
+
+ВОПРОС: использование bytea это ок? Второй вариант Large Object feature или нужно хранить данные по другому?
+
+----------
+Интерфейсы
+----------
+
+Интерфейсы для слоя хранилища:
+
+type UserRepository interface {
+	RegisterUser(*model.User) (error)
+	GetUserByLogin(string) (*model.User, error)
+}
+
+type DataRepository interface {
+	AddData(*model.Data) error
+	GetDataByUserID(string) ([]*model.Data, error)
+	DeleteDataByDataID(string) error
+}
+
+Интерфейс для конвертации и инкапсуляции типов данных:
+
+type DataType interface {
+    GetType() string
+    GetData() []byte
+}
+
+------
 Модели
+------
 
-TODO описание моделей
+type User struct {
+    id             string  `json:"id"`       // уникальный идентификатор пользователя
+    login          string  `json:"login"`
+    password       string  `json:"password"`
+    secret         []byte  `json:"secret"`
+}
 
-TODO Посмотреть все пропущенные семинары
+Типы хранимой информации
+   пары логин/пароль;
+   произвольные текстовые данные;
+   произвольные бинарные данные;
+   данные банковских карт.
+
+Для любых данных должна быть возможность хранения произвольной текстовой метаинформации (принадлежность данных к веб-сайту,
+личности или банку, списки одноразовых кодов активации и прочее).
+
+// типы данных
+const (
+	DataPassword    = "PASSWORD"
+	DataText        = "TEXT"
+	DataBinary      = "BINARY"
+	DataCard        = "CARD"
+)
+
+type Data struct {
+    id           string  // уникальный идентификатор данных
+    userID       string  // идентификатор пользователя
+    type         string  // тип данных
+    data         []byte  // зашифрованные данные в формате json
+}
+
+type password struct {
+    description  string `json:"description"`  // произвольная мета информация
+    login        string `json:"login"`
+    password     string `json:"password"`
+}
+
+type text struct {
+    description  string `json:"description"`  // произвольная мета информация
+    value        string `json:"value"`
+}
+
+type binary struct {
+    description  string `json:"description"`  // произвольная мета информация
+    value        []byte `json:"value"`
+}
+
+type card struct {
+    description  string `json:"description"`  // произвольная мета информация
+    name         string `json:"name"`
+    number       string `json:"number"`
+    date         string `json:"date"`         // срок действия
+    cvv          string `json:"cvv"`
+}
 
 Лучшие практики
 
