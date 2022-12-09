@@ -11,13 +11,15 @@ GOPHKEEPER DESIGN
 ------------------------------------------------------------------------------------------------------------------------
 Сервер
 ------
-Первый микросервис только для авторизации.
+Два grpc сервиса в одном микросервисе.
+
+TLS сервис
 
     регистрация, аутентификация и авторизация пользователей;
 
         Register - записывает пользователя в БД
 
-        Login - возвращает session_token авторизации (думаю попробовать поработать с jwt-go)
+        Login - возвращает session_token авторизации (думаю попробовать поработать с JWT)
 
         service Auth {
             rpc Register(RegisterRequest) returns(RegisterResponse);
@@ -26,18 +28,18 @@ GOPHKEEPER DESIGN
 
 
 ----------------------------------------------------------------------------------
-Второй микросервис для основной логики.
 
     хранение приватных данных;
 
         буду использовать PostgreSQL, т.к. с ним в основном работал в спринтах
-        для миграций буду использовать библиотеку goose
+        для миграций буду использовать библиотеку goose (pgx + от автора tern для миграций)
+        scany - обертка
 
     синхронизация данных между несколькими авторизованными клиентами одного владельца;
 
         на сервере будет воркер пул, похожий на реализацию в shortener,
         чтобы проверять если есть новые данные для синхронизации от клиента и записывать/обновлять их в БД
-        TODO: посмотреть вебинар про cdc
+        сценарий с одним пользователем
 
     передача приватных данных владельцу по запросу.
 
@@ -52,6 +54,7 @@ service Gophkeeper {
     rpc SyncData(SyncDataRequest) returns(SyncDataResponse); // принудительная синхронизация от пользователя
 }
 
+ВОПРОС: нужен ли кеш? нет
 ------
 Клиент
 ------
@@ -61,19 +64,23 @@ service Gophkeeper {
 Схема БД
 --------
 
++RefreshPassword (reset passsword)
+
 CREATE TABLE IF NOT EXISTS "users" (
     id       text NOT NULL PRIMARY KEY,         // уникальный идентификатор пользователя (uuid)
     login    text NOT NULL UNIQUE,              // логин пользователя уникальный
-    password text NOT NULL,
-    secret   text NOT NULL                      // зашифрованный мастер-пароль(нужен или нет?)
+    password text NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "data" (
     id          text NOT NULL PRIMARY KEY, // уникальный идентификатор данных (uuid)
     user        text NOT NULL,             // идентификатор пользователя (uuid)
+    +FOREIGN KEY REFERENCES
     type        text NOT NULL,
     data        bytea NOT NULL             // буду хранить текущий тип как бинарные данные
 );
+
+uuid лучше использовать для postgres типа
 
 ВОПРОС: использование bytea это ок? Второй вариант Large Object feature или нужно хранить данные по другому?
 
@@ -109,7 +116,6 @@ type User struct {
     id             string  `json:"id"`       // уникальный идентификатор пользователя
     login          string  `json:"login"`
     password       string  `json:"password"`
-    secret         []byte  `json:"secret"`
 }
 
 Типы хранимой информации
@@ -127,6 +133,7 @@ const (
 	DataText        = "TEXT"
 	DataBinary      = "BINARY"
 	DataCard        = "CARD"
+	лучше сделать тип DataType string как enum
 )
 
 type Data struct {
