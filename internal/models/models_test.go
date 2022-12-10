@@ -1,8 +1,9 @@
 package models
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewBinary(t *testing.T) {
@@ -116,7 +117,7 @@ func TestNewText(t *testing.T) {
 func Test_binary_GetJSON(t *testing.T) {
 	tests := []struct {
 		name    string
-		data    *binary
+		data    *Binary
 		wantErr bool
 	}{
 		{
@@ -140,7 +141,7 @@ func Test_binary_GetJSON(t *testing.T) {
 func Test_binary_GetType(t *testing.T) {
 	tests := []struct {
 		name string
-		data *binary
+		data *Binary
 		want DataType
 	}{
 		{
@@ -159,7 +160,7 @@ func Test_binary_GetType(t *testing.T) {
 func Test_card_GetJSON(t *testing.T) {
 	tests := []struct {
 		name    string
-		data    *card
+		data    *Card
 		wantErr bool
 	}{
 		{
@@ -175,7 +176,7 @@ func Test_card_GetJSON(t *testing.T) {
 				t.Errorf("GetJSON() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			assert.JSONEq(t, "{\"cvv\":\"000\", \"date\":\"03/24\", \"description\":\"description\", \"name\":\"DIGITAL CARD\", \"number\":\"5555 5555 5555 5555\"}", string(got))
+			assert.JSONEq(t, "{\"cvv\":\"000\", \"date\":\"03/24\", \"description\":\"description\", \"name\":\"DIGITAL CARD\", \"number\":\"5555 5555 5555 5555\"}", string(got)) //nolint:lll
 		})
 	}
 }
@@ -183,7 +184,7 @@ func Test_card_GetJSON(t *testing.T) {
 func Test_card_GetType(t *testing.T) {
 	tests := []struct {
 		name string
-		data *card
+		data *Card
 		want DataType
 	}{
 		{
@@ -202,7 +203,7 @@ func Test_card_GetType(t *testing.T) {
 func Test_credentials_GetJSON(t *testing.T) {
 	tests := []struct {
 		name    string
-		data    *credentials
+		data    *Credentials
 		wantErr bool
 	}{
 		{
@@ -226,7 +227,7 @@ func Test_credentials_GetJSON(t *testing.T) {
 func Test_credentials_GetType(t *testing.T) {
 	tests := []struct {
 		name string
-		data *credentials
+		data *Credentials
 		want DataType
 	}{
 		{
@@ -245,7 +246,7 @@ func Test_credentials_GetType(t *testing.T) {
 func Test_text_GetJSON(t *testing.T) {
 	tests := []struct {
 		name    string
-		data    *text
+		data    *Text
 		wantErr bool
 	}{
 		{
@@ -269,7 +270,7 @@ func Test_text_GetJSON(t *testing.T) {
 func Test_text_GetType(t *testing.T) {
 	tests := []struct {
 		name string
-		data *text
+		data *Text
 		want DataType
 	}{
 		{

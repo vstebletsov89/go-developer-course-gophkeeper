@@ -36,87 +36,90 @@ type PrivateData interface {
 	GetJSON() ([]byte, error)
 }
 
-// check that credentials implements all required methods
-var _ PrivateData = (*credentials)(nil)
+// check that Credentials implements all required methods.
+var _ PrivateData = (*Credentials)(nil)
 
-// credentials represents a structure for login/password data.
-type credentials struct {
+// Credentials represents a structure for login/password data.
+type Credentials struct {
 	Description string `json:"description"`
 	Login       string `json:"login"`
 	Password    string `json:"password"`
 }
 
-func NewCredentials(description string, login string, password string) *credentials {
-	return &credentials{Description: description, Login: login, Password: password}
+func NewCredentials(description string, login string, password string) *Credentials {
+	return &Credentials{Description: description, Login: login, Password: password}
 }
 
-func (p credentials) GetType() DataType {
+func (p Credentials) GetType() DataType {
 	return CredentialsType
 }
 
-func (p credentials) GetJSON() ([]byte, error) {
+func (p Credentials) GetJSON() ([]byte, error) {
 	data, err := json.Marshal(p)
 	if err != nil {
 		return nil, err
 	}
+
 	return data, nil
 }
 
-// check that text implements all required methods
-var _ PrivateData = (*text)(nil)
+// check that Text implements all required methods.
+var _ PrivateData = (*Text)(nil)
 
-// text represents a structure for text data.
-type text struct {
+// Text represents a structure for Text data.
+type Text struct {
 	Description string `json:"description"`
 	Value       string `json:"value"`
 }
 
-func NewText(description string, value string) *text {
-	return &text{Description: description, Value: value}
+func NewText(description string, value string) *Text {
+	return &Text{Description: description, Value: value}
 }
 
-func (t text) GetType() DataType {
+func (t Text) GetType() DataType {
 	return TextType
 }
 
-func (t text) GetJSON() ([]byte, error) {
+func (t Text) GetJSON() ([]byte, error) {
 	data, err := json.Marshal(t)
 	if err != nil {
 		return nil, err
 	}
+
 	return data, nil
 }
 
-// check that text implements all required methods
-var _ PrivateData = (*binary)(nil)
+// check that Text implements all required methods.
+var _ PrivateData = (*Binary)(nil)
 
-// binary represents a structure for binary data.
-type binary struct {
+// Binary represents a structure for Binary data.
+type Binary struct {
 	Description string `json:"description"`
 	Value       []byte `json:"value"`
 }
 
-func NewBinary(description string, value []byte) *binary {
-	return &binary{Description: description, Value: value}
+func NewBinary(description string, value []byte) *Binary {
+	return &Binary{Description: description, Value: value}
 }
 
-func (b binary) GetType() DataType {
+func (b Binary) GetType() DataType {
 	return BinaryType
 }
 
-func (b binary) GetJSON() ([]byte, error) {
+func (b Binary) GetJSON() ([]byte, error) {
 	data, err := json.Marshal(b)
 	if err != nil {
 		return nil, err
 	}
+
 	return data, nil
 }
 
-// check that card implements all required methods
-var _ PrivateData = (*card)(nil)
+// check that Card implements all required methods.
+var _ PrivateData = (*Card)(nil)
 
-// card represents a structure for credit card data.
-type card struct {
+// Card represents a structure for credit Card data.
+type Card struct {
 	Description string `json:"description"`
 	Name        string `json:"name"`
 	Number      string `json:"number"`
@@ -124,15 +127,15 @@ type card struct {
 	CVV         string `json:"cvv"`
 }
 
-func NewCard(description string, name string, number string, date string, CVV string) *card {
-	return &card{Description: description, Name: name, Number: number, Date: date, CVV: CVV}
+func NewCard(description string, name string, number string, date string, cvv string) *Card {
+	return &Card{Description: description, Name: name, Number: number, Date: date, CVV: cvv}
 }
 
-func (c card) GetType() DataType {
+func (c Card) GetType() DataType {
 	return CardType
 }
 
-func (c card) GetJSON() ([]byte, error) {
+func (c Card) GetJSON() ([]byte, error) {
 	data, err := json.Marshal(c)
 	if err != nil {
 		return nil, err
