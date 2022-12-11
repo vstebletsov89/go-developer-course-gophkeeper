@@ -3,19 +3,19 @@ package config
 
 import (
 	"flag"
-	"github.com/caarlos0/env/v6"
-	"github.com/rs/zerolog/log"
 	"sync"
+
+	"github.com/caarlos0/env/v6"
 )
 
 // Config contains global settings of service.
 type Config struct {
-	ServerAddress string `env:"SERVER_ADDRESS" envDefault:"localhost:8080" json:"server_address"`
-	DatabaseDsn   string `env:"DATABASE_DSN" envDefault:"user=postgres dbname=postgres password=postgres host=localhost sslmode=disable" json:"database_dsn"`
+	ServerAddress string `env:"SERVER_ADDRESS" envDefault:"localhost:8080" json:"serverAddress"`
+	DatabaseDsn   string `env:"DATABASE_DSN" envDefault:"user=postgres dbname=postgres password=postgres host=localhost sslmode=disable" json:"databaseDsn"` //nolint:lll
 	LogLevel      string `env:"LOG_LEVEL" envDefault:"debug"`
 }
 
-var once sync.Once
+var once sync.Once //nolint:gochecknoglobals
 
 func (c *Config) readCommandLineArgs() {
 	once.Do(func() {
@@ -36,6 +36,5 @@ func ReadConfig() (*Config, error) {
 	}
 	cfg.readCommandLineArgs()
 
-	log.Printf("%+v\n\n", cfg)
 	return &cfg, nil
 }

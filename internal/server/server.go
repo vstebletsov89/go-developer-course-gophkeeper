@@ -2,6 +2,12 @@ package server
 
 import (
 	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"google.golang.org/grpc"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -48,13 +54,38 @@ func RunServer(cfg *config.Config) error {
 		log.Debug().Msgf("connectDB error: %s", err)
 		return err
 	}
-	log.Info().Msg("Connection OK")
+
+	log.Info().Msg("Database connection: OK")
 	defer func(conn *pgx.Conn, ctx context.Context) {
 		err := conn.Close(ctx)
 		if err != nil {
 			log.Error().Msgf("Close connection error: %s", err)
 		}
 	}(conn, ctx)
+
+	// create new service
+	var grpcSrv *grpc.Server
+
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+	// start GRPC server with TLS
+	// TODO: implement it
+
+	<-sigint
+
+	// graceful shutdown
+	grpcSrv.GracefulStop()
+
+	// stop server context and release resources
+	cancel()
+
+	// release resources
+	//err := storage.ReleaseStorage() // TODO: uncomment it
+	//if err != nil {
+	//	log.Error().Msgf("Release storage error %v", err)
+	//}
+	log.Info().Msg("Server Shutdown gracefully")
 
 	return nil
 }
