@@ -24,10 +24,10 @@ const (
 
 // Data represents a structure for data type.
 type Data struct {
-	ID       string
-	UserID   string
-	DataType DataType
-	Data     []byte
+	ID         string
+	UserID     string
+	DataType   DataType
+	DataBinary []byte
 }
 
 // PrivateData is the interface that must be implemented by specific data type (credentials, text, binary, card).

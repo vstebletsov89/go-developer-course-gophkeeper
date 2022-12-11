@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"os"
 	"os/signal"
 	"syscall"
@@ -49,7 +50,7 @@ func RunServer(cfg *config.Config) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	conn, err := connectDB(ctx, cfg.DatabaseDsn)
+	conn, _, err := connectDB(context.Background(), cfg.DatabaseDsn)
 	if err != nil {
 		log.Debug().Msgf("connectDB error: %s", err)
 		return err
@@ -90,12 +91,17 @@ func RunServer(cfg *config.Config) error {
 	return nil
 }
 
-func connectDB(ctx context.Context, databaseURL string) (*pgx.Conn, error) {
+func connectDB(ctx context.Context, databaseURL string) (*pgx.Conn, *pgxpool.Pool, error) {
 	log.Debug().Msg("Connect to DB...")
 	conn, err := pgx.Connect(ctx, databaseURL)
 	if err != nil {
 		log.Error().Msgf("Failed to connect to database. Error: %v", err.Error())
-		return nil, err
+		return nil, nil, err
 	}
-	return conn, nil
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		log.Error().Msgf("Failed to create pgx pool. Error: %v", err.Error())
+		return nil, nil, err
+	}
+	return conn, pool, nil
 }

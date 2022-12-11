@@ -12,13 +12,13 @@ import (
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/storage"
 )
 
-// DBStorage implements Storage interface
+// DBStorage implements Storage interface.
 type DBStorage struct {
 	conn *pgx.Conn
 	db   *pgxpool.Pool
 }
 
-// check that DBRepository implements all required methods
+// check that DBRepository implements all required methods.
 var _ storage.Storage = (*DBStorage)(nil)
 
 // NewDBStorage returns a new DBStorage.
@@ -26,9 +26,11 @@ func NewDBStorage(connection *pgx.Conn, pool *pgxpool.Pool) *DBStorage {
 	return &DBStorage{conn: connection, db: pool}
 }
 
-func (d *DBStorage) RegisterUser(ctx context.Context, user *models.User) error {
+func (d *DBStorage) RegisterUser(ctx context.Context, user models.User) error {
 	err := d.conn.QueryRow(ctx,
-		"INSERT INTO users (id, login, password) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING login",
+		`INSERT INTO users (id, login, password)
+			 VALUES ($1, $2, $3) ON CONFLICT
+			 DO NOTHING RETURNING login`,
 		user.ID,
 		user.Login,
 		user.Password,
@@ -48,37 +50,75 @@ func (d *DBStorage) RegisterUser(ctx context.Context, user *models.User) error {
 	return nil
 }
 
-func (d *DBStorage) GetUserByLogin(ctx context.Context, login string) (*models.User, error) {
+func (d *DBStorage) GetUserByLogin(ctx context.Context, login string) (models.User, error) {
 	var users []models.User
 	err := pgxscan.Select(ctx, d.db, &users, "SELECT id, login, password FROM users WHERE login=$1",
 		login)
 	if err != nil {
 		log.Error().Msgf("GetUserByLogin error %s", err)
-		return nil, err
+		return models.User{}, err
 	}
 
 	if len(users) == 0 {
 		log.Error().Msg("User doesn't exist")
-		return nil, storage.ErrorUserNotFound
+		return models.User{}, storage.ErrorUserNotFound
 	}
 
 	log.Debug().Msg("User loaded")
-	return &users[0], nil
+	return users[0], nil
 }
 
-func (d *DBStorage) AddData(ctx context.Context, data *models.Data) error {
-	//TODO implement me
-	panic("implement me")
+func (d *DBStorage) AddData(ctx context.Context, data models.Data) error {
+	_, err := d.conn.Exec(ctx,
+		`INSERT INTO data (id, user_id, data_type, data_binary) 
+			 VALUES ($1, $2, $3, $4) ON CONFLICT(id) 
+			 DO UPDATE SET data_type = EXCLUDED.data_type,
+			               data_binary = EXCLUDED.data_binary`,
+		data.ID,
+		data.UserID,
+		data.DataType,
+		data.DataBinary,
+	)
+
+	if err != nil {
+		log.Error().Msgf("AddData error %s", err)
+		return err
+	}
+
+	log.Debug().Msg("DataBinary added")
+	return nil
 }
 
-func (d *DBStorage) GetDataByUserID(ctx context.Context, s string) ([]*models.Data, error) {
-	//TODO implement me
-	panic("implement me")
+func (d *DBStorage) GetDataByUserID(ctx context.Context, userID string) ([]models.Data, error) {
+	var data []models.Data
+	err := pgxscan.Select(ctx, d.db, &data,
+		"SELECT id, user_id, data_type, data_binary FROM data WHERE user_id=$1",
+		userID)
+	if err != nil {
+		log.Error().Msgf("GetDataByUserID error %s", err)
+		return nil, err
+	}
+
+	if len(data) == 0 {
+		log.Error().Msg("Data doesn't exist")
+		return nil, storage.ErrorPrivateDataNotFound
+	}
+
+	log.Debug().Msg("Data loaded")
+	return data, nil
 }
 
-func (d *DBStorage) DeleteDataByDataID(ctx context.Context, s string) error {
-	//TODO implement me
-	panic("implement me")
+func (d *DBStorage) DeleteDataByDataID(ctx context.Context, id string) error {
+	_, err := d.conn.Exec(ctx,
+		`DELETE from data WHERE id = $1`,
+		id)
+
+	if err != nil {
+		return err
+	}
+
+	log.Info().Msg("DataBinary deleted")
+	return nil
 }
 
 func (d *DBStorage) ReleaseStorage(ctx context.Context) error {

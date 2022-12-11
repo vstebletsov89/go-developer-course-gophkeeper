@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/google/uuid"
@@ -41,8 +42,7 @@ CREATE TABLE IF NOT EXISTS data (
     user_id     uuid        REFERENCES users(id) ON DELETE CASCADE,
     data_type   text        NOT NULL,
     data_binary bytea       NOT NULL,
-    created_at  timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at  timestamptz
+    created_at  timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 `
 
@@ -102,6 +102,10 @@ func (sts *StorageTestSuite) SetupTest() {
 }
 
 func (sts *StorageTestSuite) TearDownTest() {
+	err := sts.TestStorage.ReleaseStorage(context.Background())
+	if err != nil {
+		return
+	}
 	sts.container.Close(sts.T())
 }
 
@@ -112,12 +116,12 @@ func TestStorageTestSuite(t *testing.T) {
 func (sts *StorageTestSuite) TestDBStorage_RegisterUser() {
 	tests := []struct {
 		name    string
-		user    *models.User
+		user    models.User
 		wantErr bool
 	}{
 		{
 			name: "positive test",
-			user: &models.User{
+			user: models.User{
 				ID:       uuid.NewString(),
 				Login:    "login",
 				Password: "password",
@@ -126,7 +130,7 @@ func (sts *StorageTestSuite) TestDBStorage_RegisterUser() {
 		},
 		{
 			name: "negative test",
-			user: &models.User{
+			user: models.User{
 				ID:       uuid.NewString(),
 				Login:    "login",
 				Password: "password",
@@ -153,12 +157,12 @@ func (sts *StorageTestSuite) TestDBStorage_RegisterUser() {
 func (sts *StorageTestSuite) TestDBStorage_GetUserByLogin() {
 	tests := []struct {
 		name    string
-		user    *models.User
+		user    models.User
 		wantErr bool
 	}{
 		{
 			name: "positive test",
-			user: &models.User{
+			user: models.User{
 				ID:       uuid.NewString(),
 				Login:    "login",
 				Password: "password",
@@ -167,7 +171,7 @@ func (sts *StorageTestSuite) TestDBStorage_GetUserByLogin() {
 		},
 		{
 			name: "negative test",
-			user: &models.User{
+			user: models.User{
 				ID:       uuid.NewString(),
 				Login:    "login2",
 				Password: "password2",
@@ -201,6 +205,194 @@ func (sts *StorageTestSuite) TestDBStorage_GetUserByLogin() {
 				assert.Equal(sts.T(), user.Password, tt.user.Password)
 			} else {
 				assert.ErrorIs(sts.T(), err, storage.ErrorUserNotFound)
+			}
+		})
+	}
+}
+
+func (sts *StorageTestSuite) TestDBStorage_AddData() {
+	tests := []struct {
+		name    string
+		id      string
+		data    *models.Text
+		wantErr bool
+	}{
+		{
+			name:    "positive test",
+			id:      uuid.NewString(),
+			data:    models.NewText("description", "some text here"),
+			wantErr: false,
+		},
+	}
+
+	user := models.User{
+		ID:       uuid.NewString(),
+		Login:    "login",
+		Password: "password",
+	}
+
+	err := sts.TestStorage.RegisterUser(context.Background(), user)
+	if err != nil {
+		sts.T().Errorf("RegisterUser() error = %v", err)
+		return
+	}
+
+	for _, tt := range tests {
+		sts.Run(tt.name, func() {
+			s := sts.TestStorage
+
+			binary, err := json.Marshal(tt.data)
+			assert.NoError(sts.T(), err)
+
+			err = s.AddData(context.Background(),
+				models.Data{
+					ID:         tt.id,
+					UserID:     user.ID,
+					DataType:   tt.data.GetType(),
+					DataBinary: binary,
+				})
+			if (err != nil) != tt.wantErr {
+				sts.T().Errorf("AddData() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
+
+func (sts *StorageTestSuite) TestDBStorage_GetDataByUserID() {
+	tests := []struct {
+		name    string
+		data    *models.Text
+		wantErr bool
+	}{
+		{
+			name:    "positive test",
+			data:    models.NewText("description", "some text here"),
+			wantErr: false,
+		},
+		{
+			name:    "positive test (update)",
+			data:    models.NewText("description updated", "text updated"),
+			wantErr: false,
+		},
+		{
+			name:    "negative test",
+			data:    models.NewText("test", "test"),
+			wantErr: true,
+		},
+	}
+
+	id := uuid.NewString()
+	user := models.User{
+		ID:       uuid.NewString(),
+		Login:    "login",
+		Password: "password",
+	}
+
+	err := sts.TestStorage.RegisterUser(context.Background(), user)
+	if err != nil {
+		sts.T().Errorf("RegisterUser() error = %v", err)
+		return
+	}
+
+	for _, tt := range tests {
+		sts.Run(tt.name, func() {
+			s := sts.TestStorage
+
+			binary, err := json.Marshal(tt.data)
+			assert.NoError(sts.T(), err)
+
+			err = s.AddData(context.Background(),
+				models.Data{
+					ID:         id,
+					UserID:     user.ID,
+					DataType:   tt.data.GetType(),
+					DataBinary: binary,
+				})
+			if err != nil {
+				sts.T().Errorf("AddData() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			userID := user.ID
+			if tt.wantErr {
+				userID = uuid.NewString()
+			}
+
+			data, err := s.GetDataByUserID(context.Background(), userID)
+			if (err != nil) != tt.wantErr {
+				sts.T().Errorf("GetDataByUserID() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantErr {
+				assert.ErrorIs(sts.T(), err, storage.ErrorPrivateDataNotFound)
+				return
+			}
+
+			var extracted models.Text
+			err = json.Unmarshal(data[0].DataBinary, &extracted)
+			assert.NoError(sts.T(), err)
+			log.Debug().Msgf("data %v", extracted)
+
+			assert.Equal(sts.T(), data[0].ID, id)
+			assert.Equal(sts.T(), data[0].UserID, user.ID)
+			assert.Equal(sts.T(), data[0].DataType, tt.data.GetType())
+			assert.Equal(sts.T(), data[0].DataBinary, binary)
+		})
+	}
+}
+
+func (sts *StorageTestSuite) TestDBStorage_DeleteDataByDataID() {
+	tests := []struct {
+		name    string
+		id      string
+		data    *models.Text
+		wantErr bool
+	}{
+		{
+			name:    "positive test",
+			id:      uuid.NewString(),
+			data:    models.NewText("description", "some text here"),
+			wantErr: false,
+		},
+	}
+
+	user := models.User{
+		ID:       uuid.NewString(),
+		Login:    "login",
+		Password: "password",
+	}
+
+	err := sts.TestStorage.RegisterUser(context.Background(), user)
+	if err != nil {
+		sts.T().Errorf("RegisterUser() error = %v", err)
+		return
+	}
+
+	for _, tt := range tests {
+		sts.Run(tt.name, func() {
+			s := sts.TestStorage
+
+			binary, err := json.Marshal(tt.data)
+			assert.NoError(sts.T(), err)
+
+			err = s.AddData(context.Background(),
+				models.Data{
+					ID:         tt.id,
+					UserID:     user.ID,
+					DataType:   tt.data.GetType(),
+					DataBinary: binary,
+				})
+			if (err != nil) != tt.wantErr {
+				sts.T().Errorf("AddData() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			err = s.DeleteDataByDataID(context.Background(), tt.id)
+			if (err != nil) != tt.wantErr {
+				sts.T().Errorf("DeleteDataByDataID() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
 		})
 	}

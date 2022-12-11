@@ -5,8 +5,7 @@ CREATE TABLE IF NOT EXISTS data (
     user_id     uuid        REFERENCES users(id) ON DELETE CASCADE,
     data_type   text        NOT NULL,
     data_binary bytea       NOT NULL,
-    created_at  timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at  timestamptz
+    created_at  timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 ---- create above / drop below ----
