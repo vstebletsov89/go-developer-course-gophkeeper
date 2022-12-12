@@ -16,11 +16,11 @@ import (
 type AuthServer struct {
 	pb.UnimplementedAuthServer
 	service service.Service
-	//TODO: add additional fields?
+	jwt     auth.JWT
 }
 
-func NewAuthServer(service service.Service) *AuthServer {
-	return &AuthServer{service: service}
+func NewAuthServer(service service.Service, jwt auth.JWT) *AuthServer {
+	return &AuthServer{service: service, jwt: jwt}
 }
 
 func (a *AuthServer) Register(ctx context.Context, request *pb.RegisterRequest) (*pb.RegisterResponse, error) {
@@ -55,19 +55,21 @@ func (a *AuthServer) Login(ctx context.Context, request *pb.LoginRequest) (*pb.L
 	}
 	user := proto.ConvertFromProtoUserToModel(request.GetUser())
 
-	ok, err := auth.IsUserAuthorized(user, userDB)
+	ok, err := auth.IsUserAuthorized(&user, &userDB)
 	if !ok {
 		return nil, status.Errorf(codes.Unauthenticated, "incorrect username/password")
 	}
 
-	// TODO: implement jwt
-	//token, err := auth.jwtManager.Generate(user)
-	//if err != nil {
-	//	return nil, status.Errorf(codes.Internal, "cannot generate access token")
-	//}
+	token, err := a.jwt.GenerateToken(userDB.ID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot generate access token")
+	}
 
 	response.User = request.GetUser()
-	response.Token = token
+	response.Token = &pb.Token{
+		Login: userDB.Login,
+		Token: token,
+	}
 
 	log.Debug().Msg("Server (Login): done")
 	return &response, nil

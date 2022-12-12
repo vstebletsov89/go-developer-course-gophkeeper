@@ -12,12 +12,6 @@ type User struct {
 	Password string `json:"password"`
 }
 
-// Token represents a structure for JWT token.
-type Token struct {
-	Login string `json:"login"`
-	Token string `json:"token"`
-}
-
 // DataType enum type for data types (same as in grpc).
 type DataType int32
 

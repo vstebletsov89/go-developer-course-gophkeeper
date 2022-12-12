@@ -1,5 +1,6 @@
 TODO:
   https://dev.to/techschoolguru/use-grpc-interceptor-for-authorization-with-jwt-1c5h
+  https://github.com/MaksimDzhangirov/complete-gRPC/blob/main/lecture15_rus.md
  * grpc service + handlers (users)
  * grpc interceptors + TLS
  * grpc service + handlers (data)
