@@ -1,10 +1,11 @@
-// Package server contains grpc handlers and interceptors.
+// Package server contains grpc servers and interceptors.
 package server
 
 import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service"
+	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"os"
@@ -19,9 +20,6 @@ import (
 	pb "github.com/vstebletsov89/go-developer-course-gophkeeper/internal/proto"
 )
 
-// TODO: auth server implement + JWT
-// TODO: tests for all services
-
 type GophkeeperServer struct {
 	pb.UnimplementedGophkeeperServer
 	service service.Service
@@ -33,7 +31,7 @@ func NewGophkeeperServer(service service.Service) *GophkeeperServer {
 
 func (g *GophkeeperServer) AddData(ctx context.Context, request *pb.AddDataRequest) (*pb.AddDataResponse, error) {
 	var response pb.AddDataResponse
-	data := service.ConvertFromProtoDataToModel(request.GetData())
+	data := proto.ConvertFromProtoDataToModel(request.GetData())
 
 	err := g.service.AddData(ctx, data)
 	if err != nil {
@@ -53,7 +51,7 @@ func (g *GophkeeperServer) GetData(ctx context.Context, request *pb.GetDataReque
 	}
 
 	for _, v := range data {
-		secret := service.ConvertFromModelToProtoData(v)
+		secret := proto.ConvertFromModelToProtoData(v)
 		response.Data = append(response.Data, secret)
 	}
 

@@ -1,4 +1,5 @@
-package service
+// Package proto contains functions to convert proto and internal structures.
+package proto
 
 import (
 	"github.com/google/uuid"
@@ -20,5 +21,13 @@ func ConvertFromModelToProtoData(data models.Data) *proto.Data {
 		UserId:     data.UserID,
 		DataType:   proto.DataType(data.DataType),
 		DataBinary: data.DataBinary,
+	}
+}
+
+func ConvertFromProtoUserToModel(user *proto.User) models.User {
+	return models.User{
+		ID:       "",
+		Login:    user.GetLogin(),
+		Password: user.GetPassword(),
 	}
 }
