@@ -9,7 +9,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/config"
@@ -47,22 +46,17 @@ func RunServer(cfg *config.Config) error {
 	// debug config
 	log.Debug().Msgf("%+v\n\n", cfg)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background()) //TODO: return ctx
 	defer cancel()
 
-	conn, _, err := connectDB(context.Background(), cfg.DatabaseDsn)
+	db, err := connectDB(context.Background(), cfg.DatabaseDsn)
 	if err != nil {
 		log.Debug().Msgf("connectDB error: %s", err)
 		return err
 	}
 
 	log.Info().Msg("Database connection: OK")
-	defer func(conn *pgx.Conn, ctx context.Context) {
-		err := conn.Close(ctx)
-		if err != nil {
-			log.Error().Msgf("Close connection error: %s", err)
-		}
-	}(conn, ctx)
+	defer db.Close()
 
 	// create new service
 	var grpcSrv *grpc.Server
@@ -91,17 +85,12 @@ func RunServer(cfg *config.Config) error {
 	return nil
 }
 
-func connectDB(ctx context.Context, databaseURL string) (*pgx.Conn, *pgxpool.Pool, error) {
+func connectDB(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	log.Debug().Msg("Connect to DB...")
-	conn, err := pgx.Connect(ctx, databaseURL)
-	if err != nil {
-		log.Error().Msgf("Failed to connect to database. Error: %v", err.Error())
-		return nil, nil, err
-	}
 	pool, err := pgxpool.New(ctx, databaseURL)
 	if err != nil {
-		log.Error().Msgf("Failed to create pgx pool. Error: %v", err.Error())
-		return nil, nil, err
+		log.Error().Msgf("Failed to connect to database. Error: %v", err.Error())
+		return nil, err
 	}
-	return conn, pool, nil
+	return pool, nil
 }

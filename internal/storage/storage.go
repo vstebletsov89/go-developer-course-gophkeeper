@@ -25,5 +25,5 @@ type Storage interface {
 	// DeleteDataByDataID deletes private data for the current user.
 	DeleteDataByDataID(context.Context, string) error
 	// ReleaseStorage releases current storage.
-	ReleaseStorage(context.Context) error
+	ReleaseStorage()
 }

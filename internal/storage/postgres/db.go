@@ -14,20 +14,19 @@ import (
 
 // DBStorage implements Storage interface.
 type DBStorage struct {
-	conn *pgx.Conn
-	db   *pgxpool.Pool
+	db *pgxpool.Pool
 }
 
 // check that DBRepository implements all required methods.
 var _ storage.Storage = (*DBStorage)(nil)
 
 // NewDBStorage returns a new DBStorage.
-func NewDBStorage(connection *pgx.Conn, pool *pgxpool.Pool) *DBStorage {
-	return &DBStorage{conn: connection, db: pool}
+func NewDBStorage(pool *pgxpool.Pool) *DBStorage {
+	return &DBStorage{db: pool}
 }
 
 func (d *DBStorage) RegisterUser(ctx context.Context, user models.User) error {
-	err := d.conn.QueryRow(ctx,
+	err := d.db.QueryRow(ctx,
 		`INSERT INTO users (id, login, password)
 			 VALUES ($1, $2, $3) ON CONFLICT
 			 DO NOTHING RETURNING login`,
@@ -69,7 +68,7 @@ func (d *DBStorage) GetUserByLogin(ctx context.Context, login string) (models.Us
 }
 
 func (d *DBStorage) AddData(ctx context.Context, data models.Data) error {
-	_, err := d.conn.Exec(ctx,
+	_, err := d.db.Exec(ctx,
 		`INSERT INTO data (id, user_id, data_type, data_binary) 
 			 VALUES ($1, $2, $3, $4) ON CONFLICT(id) 
 			 DO UPDATE SET data_type = EXCLUDED.data_type,
@@ -109,7 +108,7 @@ func (d *DBStorage) GetDataByUserID(ctx context.Context, userID string) ([]model
 }
 
 func (d *DBStorage) DeleteDataByDataID(ctx context.Context, id string) error {
-	_, err := d.conn.Exec(ctx,
+	_, err := d.db.Exec(ctx,
 		`DELETE from data WHERE id = $1`,
 		id)
 
@@ -121,11 +120,7 @@ func (d *DBStorage) DeleteDataByDataID(ctx context.Context, id string) error {
 	return nil
 }
 
-func (d *DBStorage) ReleaseStorage(ctx context.Context) error {
-	err := d.conn.Close(ctx)
-	if err != nil {
-		return err
-	}
+func (d *DBStorage) ReleaseStorage() {
+	d.db.Close()
 	log.Info().Msg("Storage released")
-	return nil
 }

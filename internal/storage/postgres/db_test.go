@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -46,9 +45,9 @@ CREATE TABLE IF NOT EXISTS data (
 );
 `
 
-func migrateTables(connection *pgx.Conn) error {
+func migrateTables(pool *pgxpool.Pool) error {
 	log.Info().Msg("Migration started..")
-	_, err := connection.Exec(context.Background(), PostgreSQLTables)
+	_, err := pool.Exec(context.Background(), PostgreSQLTables)
 	if err != nil {
 		return err
 	}
@@ -56,19 +55,14 @@ func migrateTables(connection *pgx.Conn) error {
 	return nil
 }
 
-func connectDB(ctx context.Context, databaseURL string) (*pgx.Conn, *pgxpool.Pool, error) {
+func connectDB(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	log.Debug().Msg("Connect to DB...")
-	conn, err := pgx.Connect(ctx, databaseURL)
-	if err != nil {
-		log.Error().Msgf("Failed to connect to database. Error: %v", err.Error())
-		return nil, nil, err
-	}
 	pool, err := pgxpool.New(ctx, databaseURL)
 	if err != nil {
-		log.Error().Msgf("Failed to create pgx pool. Error: %v", err.Error())
-		return nil, nil, err
+		log.Error().Msgf("Failed to connect to database. Error: %v", err.Error())
+		return nil, err
 	}
-	return conn, pool, nil
+	return pool, nil
 }
 
 func (sts *StorageTestSuite) SetupTest() {
@@ -87,14 +81,14 @@ func (sts *StorageTestSuite) SetupTest() {
 	cfg, err := config.ReadConfig()
 	require.NoError(sts.T(), err)
 
-	conn, pool, err := connectDB(context.Background(), cfg.DatabaseDsn)
+	pool, err := connectDB(context.Background(), cfg.DatabaseDsn)
 	require.NoError(sts.T(), err)
 
 	// migrations
-	err = migrateTables(conn)
+	err = migrateTables(pool)
 	require.NoError(sts.T(), err)
 
-	db := NewDBStorage(conn, pool)
+	db := NewDBStorage(pool)
 	require.NoError(sts.T(), err)
 
 	sts.TestStorage = db
@@ -102,10 +96,6 @@ func (sts *StorageTestSuite) SetupTest() {
 }
 
 func (sts *StorageTestSuite) TearDownTest() {
-	err := sts.TestStorage.ReleaseStorage(context.Background())
-	if err != nil {
-		return
-	}
 	sts.container.Close(sts.T())
 }
 
@@ -394,6 +384,60 @@ func (sts *StorageTestSuite) TestDBStorage_DeleteDataByDataID() {
 				sts.T().Errorf("DeleteDataByDataID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+		})
+	}
+}
+
+func (sts *StorageTestSuite) TestDBStorage_NegativeAll() {
+	tests := []struct {
+		name    string
+		user    models.User
+		id      string
+		data    *models.Text
+		wantErr bool
+	}{
+		{
+			name: "negative tests for all methods",
+			user: models.User{
+				ID:       uuid.NewString(),
+				Login:    "login",
+				Password: "password",
+			},
+			id:      uuid.NewString(),
+			data:    models.NewText("description", "some text here"),
+			wantErr: true,
+		},
+	}
+
+	sts.TestStorage.ReleaseStorage()
+
+	for _, tt := range tests {
+		sts.Run(tt.name, func() {
+			s := sts.TestStorage
+
+			binary, err := json.Marshal(tt.data)
+			assert.NoError(sts.T(), err)
+
+			err = s.RegisterUser(context.Background(), tt.user)
+			assert.NotNil(sts.T(), err)
+
+			_, err = s.GetUserByLogin(context.Background(), "login")
+			assert.NotNil(sts.T(), err)
+
+			err = s.AddData(context.Background(),
+				models.Data{
+					ID:         tt.id,
+					UserID:     uuid.NewString(),
+					DataType:   tt.data.GetType(),
+					DataBinary: binary,
+				})
+			assert.NotNil(sts.T(), err)
+
+			_, err = s.GetDataByUserID(context.Background(), tt.user.ID)
+			assert.NotNil(sts.T(), err)
+
+			err = s.DeleteDataByDataID(context.Background(), tt.id)
+			assert.NotNil(sts.T(), err)
 		})
 	}
 }
