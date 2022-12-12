@@ -17,7 +17,7 @@ type DBStorage struct {
 	db *pgxpool.Pool
 }
 
-// check that DBRepository implements all required methods.
+// check that DBStorage implements all required methods.
 var _ storage.Storage = (*DBStorage)(nil)
 
 // NewDBStorage returns a new DBStorage.

@@ -147,7 +147,7 @@ func Test_binary_GetType(t *testing.T) {
 		{
 			name: "positive test",
 			data: NewBinary("description", []byte("raw data")),
-			want: BinaryType,
+			want: BINARY_TYPE,
 		},
 	}
 	for _, tt := range tests {
@@ -190,7 +190,7 @@ func Test_card_GetType(t *testing.T) {
 		{
 			name: "positive test",
 			data: NewCard("description", "DIGITAL CARD", "5555 5555 5555 5555", "03/24", "000"),
-			want: CardType,
+			want: CARD_TYPE,
 		},
 	}
 	for _, tt := range tests {
@@ -233,7 +233,7 @@ func Test_credentials_GetType(t *testing.T) {
 		{
 			name: "positive test",
 			data: NewCredentials("description", "user", "password"),
-			want: CredentialsType,
+			want: CREDENTIALS_TYPE,
 		},
 	}
 	for _, tt := range tests {
@@ -276,7 +276,7 @@ func Test_text_GetType(t *testing.T) {
 		{
 			name: "positive test",
 			data: NewText("description", "some text here"),
-			want: TextType,
+			want: TEXT_TYPE,
 		},
 	}
 	for _, tt := range tests {

@@ -9,17 +9,23 @@ import (
 type User struct {
 	ID       string `json:"id"`
 	Login    string `json:"login"`
-	Password string `json:"credentials"`
+	Password string `json:"password"`
 }
 
-// DataType enum type for data types.
-type DataType string
+// Token represents a structure for JWT token.
+type Token struct {
+	Login string `json:"login"`
+	Token string `json:"token"`
+}
+
+// DataType enum type for data types (same as in grpc).
+type DataType int32
 
 const (
-	CredentialsType DataType = "credentials"
-	TextType        DataType = "text"
-	BinaryType      DataType = "binary"
-	CardType        DataType = "card"
+	CREDENTIALS_TYPE DataType = 0
+	TEXT_TYPE        DataType = 1
+	BINARY_TYPE      DataType = 2
+	CARD_TYPE        DataType = 3
 )
 
 // Data represents a structure for data type.
@@ -51,7 +57,7 @@ func NewCredentials(description string, login string, password string) *Credenti
 }
 
 func (p Credentials) GetType() DataType {
-	return CredentialsType
+	return CREDENTIALS_TYPE
 }
 
 func (p Credentials) GetJSON() ([]byte, error) {
@@ -77,7 +83,7 @@ func NewText(description string, value string) *Text {
 }
 
 func (t Text) GetType() DataType {
-	return TextType
+	return TEXT_TYPE
 }
 
 func (t Text) GetJSON() ([]byte, error) {
@@ -103,7 +109,7 @@ func NewBinary(description string, value []byte) *Binary {
 }
 
 func (b Binary) GetType() DataType {
-	return BinaryType
+	return BINARY_TYPE
 }
 
 func (b Binary) GetJSON() ([]byte, error) {
@@ -132,7 +138,7 @@ func NewCard(description string, name string, number string, date string, cvv st
 }
 
 func (c Card) GetType() DataType {
-	return CardType
+	return CARD_TYPE
 }
 
 func (c Card) GetJSON() ([]byte, error) {

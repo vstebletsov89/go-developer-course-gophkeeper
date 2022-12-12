@@ -11,6 +11,7 @@ var ErrorUnauthorized = errors.New("user is unauthorized")
 var ErrorUserAlreadyExist = errors.New("user already exists")
 var ErrorUserNotFound = errors.New("user not found")
 var ErrorPrivateDataNotFound = errors.New("private data not found")
+var ErrorInvalidDataType = errors.New("private data has invalid type")
 
 // Storage is the interface that must be implemented by specific storage.
 type Storage interface {

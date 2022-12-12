@@ -1,8 +1,12 @@
+// Package server contains grpc handlers and interceptors.
 package server
 
 import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,7 +16,62 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/config"
+	pb "github.com/vstebletsov89/go-developer-course-gophkeeper/internal/proto"
 )
+
+// TODO: auth server implement + JWT
+// TODO: tests for all services
+
+type GophkeeperServer struct {
+	pb.UnimplementedGophkeeperServer
+	service service.Service
+}
+
+func NewGophkeeperServer(service service.Service) *GophkeeperServer {
+	return &GophkeeperServer{service: service}
+}
+
+func (g *GophkeeperServer) AddData(ctx context.Context, request *pb.AddDataRequest) (*pb.AddDataResponse, error) {
+	var response pb.AddDataResponse
+	data := service.ConvertFromProtoDataToModel(request.GetData())
+
+	err := g.service.AddData(ctx, data)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	log.Debug().Msg("Server (AddData): done")
+	return &response, nil
+}
+
+func (g *GophkeeperServer) GetData(ctx context.Context, request *pb.GetDataRequest) (*pb.GetDataResponse, error) {
+	var response pb.GetDataResponse
+
+	data, err := g.service.GetDataByUserID(ctx, request.GetUserId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	for _, v := range data {
+		secret := service.ConvertFromModelToProtoData(v)
+		response.Data = append(response.Data, secret)
+	}
+
+	log.Debug().Msg("Server (GetData): done")
+	return &response, nil
+}
+
+func (g *GophkeeperServer) DeleteData(ctx context.Context, request *pb.DeleteDataRequest) (*pb.DeleteDataResponse, error) {
+	var response pb.DeleteDataResponse
+
+	err := g.service.DeleteDataByDataID(ctx, request.GetDataId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	log.Debug().Msg("Server (DeleteData): done")
+	return &response, nil
+}
 
 func parseLogLevel(level string) zerolog.Level {
 	switch level {
