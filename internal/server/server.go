@@ -6,8 +6,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/secure"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service"
+	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service/auth"
+	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/storage/postgres"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -109,8 +114,11 @@ func RunServer(cfg *config.Config) error {
 	// debug config
 	log.Debug().Msgf("%+v\n\n", cfg)
 
-	_, cancel := context.WithCancel(context.Background()) //TODO: return ctx
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// error group to control server instances
+	g, ctx := errgroup.WithContext(ctx)
 
 	db, err := connectDB(context.Background(), cfg.DatabaseDsn)
 	if err != nil {
@@ -121,29 +129,56 @@ func RunServer(cfg *config.Config) error {
 	log.Info().Msg("Database connection: OK")
 	defer db.Close()
 
+	// create storage
+	storage := postgres.NewDBStorage(db)
+
 	// create new service
+	svc := service.NewService(storage)
 	var grpcSrv *grpc.Server
 
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
+	// TODO: add TLS support and credentials
 	// start GRPC server with TLS
-	// TODO: implement it
+	g.Go(func() error {
+		listen, err := net.Listen("tcp", cfg.ServerAddress)
+		if err != nil {
+			log.Error().Msgf("GRPC server net.Listen: %v", err.Error())
+			return err
+		}
+
+		jwtManager := auth.NewJWTManager(cfg.LogLevel)
+
+		grpcSrv = grpc.NewServer(grpc.UnaryInterceptor(UnaryInterceptor))
+		pb.RegisterAuthServer(grpcSrv, NewAuthServer(*svc, jwtManager))
+		pb.RegisterGophkeeperServer(grpcSrv, NewGophkeeperServer(*svc))
+
+		log.Info().Msgf("GRPC server started on %v", cfg.ServerAddress)
+		// start grc server
+		if err := grpcSrv.Serve(listen); err != nil {
+			log.Error().Msgf("Serve error: %v", err.Error())
+			return err
+		}
+		return nil
+	})
 
 	<-sigint
 
-	// graceful shutdown
 	grpcSrv.GracefulStop()
 
 	// stop server context and release resources
 	cancel()
 
 	// release resources
-	//err := storage.ReleaseStorage() // TODO: uncomment it
-	//if err != nil {
-	//	log.Error().Msgf("Release storage error %v", err)
-	//}
+	storage.ReleaseStorage()
 	log.Info().Msg("Server Shutdown gracefully")
+
+	err = g.Wait()
+	if err != nil {
+		log.Error().Msgf("error group: %v", err)
+		return err
+	}
 
 	return nil
 }
@@ -156,4 +191,24 @@ func connectDB(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 		return nil, err
 	}
 	return pool, nil
+}
+
+func UnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	// TODO: think about it (extract current JWT token and check it is valid)
+
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		values := md.Get("service.AccessToken")
+		if len(values) > 0 {
+			//userID = values[0]
+			//log.Printf("UnaryInterceptor userID from context: '%s'", userID)
+		}
+	}
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		//md.Append("service.AccessToke"n, string("userID"))
+	}
+	newCtx := metadata.NewIncomingContext(ctx, md)
+
+	return handler(newCtx, req)
 }

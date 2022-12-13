@@ -4,8 +4,6 @@ TODO:
  * grpc service + handlers (users)
  * grpc interceptors + TLS
  * grpc service + handlers (data)
- * encryption data
- * jwt tokens
  * server
  * client
  * синхронизация данных

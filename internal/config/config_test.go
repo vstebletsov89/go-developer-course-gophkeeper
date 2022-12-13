@@ -16,6 +16,7 @@ func TestReadConfig(t *testing.T) {
 			want: &Config{
 				ServerAddress: "localhost:8080",
 				DatabaseDsn:   "user=postgres dbname=postgres password=postgres host=localhost sslmode=disable",
+				JwtSecretKey:  "secret_key",
 				LogLevel:      "debug",
 			},
 		},
