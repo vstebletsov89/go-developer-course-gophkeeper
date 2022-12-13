@@ -4,8 +4,8 @@ package server
 import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/secure"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service"
-	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"os"
@@ -31,9 +31,12 @@ func NewGophkeeperServer(service service.Service) *GophkeeperServer {
 
 func (g *GophkeeperServer) AddData(ctx context.Context, request *pb.AddDataRequest) (*pb.AddDataResponse, error) {
 	var response pb.AddDataResponse
-	data := proto.ConvertFromProtoDataToModel(request.GetData())
+	data, err := secure.EncryptPrivateData(request.GetData())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
-	err := g.service.AddData(ctx, data)
+	err = g.service.AddData(ctx, data)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -51,7 +54,10 @@ func (g *GophkeeperServer) GetData(ctx context.Context, request *pb.GetDataReque
 	}
 
 	for _, v := range data {
-		secret := proto.ConvertFromModelToProtoData(v)
+		secret, err := secure.DecryptPrivateData(v)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 		response.Data = append(response.Data, secret)
 	}
 

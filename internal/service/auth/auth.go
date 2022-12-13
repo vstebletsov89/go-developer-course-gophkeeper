@@ -29,6 +29,10 @@ type JWT interface {
 	ValidateToken(token string) (*UserClaims, error)
 }
 
+func NewJWTManager(secretKey string) *JWTManager {
+	return &JWTManager{secretKey: secretKey}
+}
+
 // check that JWTManager implements all required methods.
 var _ JWT = (*JWTManager)(nil)
 
@@ -44,11 +48,12 @@ func (J *JWTManager) GenerateToken(user string) (string, error) {
 	}}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	genToken, err := token.SignedString(J.secretKey)
+	genToken, err := token.SignedString([]byte(J.secretKey))
 	if err != nil {
 		return "", err
 	}
 
+	log.Debug().Msgf("GenerateToken token: %s", genToken)
 	return genToken, nil
 }
 
@@ -62,7 +67,7 @@ func (J *JWTManager) ValidateToken(accessToken string) (*UserClaims, error) {
 				return nil, fmt.Errorf("unexpected token signing method")
 			}
 
-			return J.secretKey, nil
+			return []byte(J.secretKey), nil
 		},
 	)
 
@@ -75,6 +80,7 @@ func (J *JWTManager) ValidateToken(accessToken string) (*UserClaims, error) {
 		return nil, fmt.Errorf("invalid token claims")
 	}
 
+	log.Debug().Msg("ValidateToken: OK")
 	return claims, nil
 }
 
@@ -96,11 +102,13 @@ func IsUserAuthorized(user *models.User, userDB *models.User) (bool, error) {
 		return false, err
 	}
 
+	log.Debug().Msg("User authorized")
 	// user authorized
 	return true, nil
 }
 
 func ExtractUserIDFromContext(ctx context.Context) string {
+	// TODO: update it
 	// try to get userID from metadata
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {

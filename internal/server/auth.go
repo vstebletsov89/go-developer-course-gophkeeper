@@ -8,7 +8,6 @@ import (
 	pb "github.com/vstebletsov89/go-developer-course-gophkeeper/internal/proto"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service/auth"
-	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -53,7 +52,11 @@ func (a *AuthServer) Login(ctx context.Context, request *pb.LoginRequest) (*pb.L
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot find user: %v", err)
 	}
-	user := proto.ConvertFromProtoUserToModel(request.GetUser())
+	user := models.User{
+		ID:       "",
+		Login:    request.GetUser().GetLogin(),
+		Password: request.GetUser().GetPassword(),
+	}
 
 	ok, err := auth.IsUserAuthorized(&user, &userDB)
 	if !ok {

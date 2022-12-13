@@ -18,8 +18,6 @@ func NewService(storage storage.Storage) *Service {
 	}
 }
 
-// TODO: add encryption/decryption for user password and private data
-
 func (s *Service) RegisterUser(ctx context.Context, user models.User) error {
 	return s.storage.RegisterUser(ctx, user)
 }
