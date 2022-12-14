@@ -36,6 +36,7 @@ func (j *JwtInterceptor) UnaryInterceptor(ctx context.Context, req interface{}, 
 	}
 
 	token := values[0]
+	log.Debug().Msgf("Validation token: %v", token)
 	err := j.jwt.ValidateToken(token)
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, "invalid authorization token: %v", err)

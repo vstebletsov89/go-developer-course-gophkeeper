@@ -1,7 +1,6 @@
 TODO:
   https://dev.to/techschoolguru/use-grpc-interceptor-for-authorization-with-jwt-1c5h
   https://github.com/MaksimDzhangirov/complete-gRPC/blob/main/lecture15_rus.md
- * server (auth + gophkeeper) + tests
  * implement client
  * makefiles для разных ОС
  * клиент должен распространяться в виде CLI-приложения с возможностью запуска на платформах Windows, Linux и Mac OS;

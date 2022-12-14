@@ -143,18 +143,16 @@ func TestJWTManager_ValidateToken(t *testing.T) {
 		secretKey string
 	}
 	tests := []struct {
-		name             string
-		fields           fields
-		user             string
-		wantUserClaimsID string
-		wantErr          bool
+		name    string
+		fields  fields
+		user    string
+		wantErr bool
 	}{
 		{
-			name:             "positive test",
-			fields:           fields{secretKey: "some_key"},
-			user:             "user",
-			wantUserClaimsID: "user",
-			wantErr:          false,
+			name:    "positive test",
+			fields:  fields{secretKey: "some_key"},
+			user:    "user",
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -165,12 +163,12 @@ func TestJWTManager_ValidateToken(t *testing.T) {
 			token, err := J.GenerateToken(tt.user)
 			assert.NoError(t, err)
 
-			got, err := J.ValidateToken(token)
+			err = J.ValidateToken(token)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ValidateToken() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			assert.Equal(t, tt.user, got.ID)
+			assert.NoError(t, err)
 		})
 	}
 }

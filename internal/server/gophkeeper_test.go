@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/config"
@@ -54,7 +55,7 @@ func migrateTables(pool *pgxpool.Pool) error {
 	return nil
 }
 
-func TestGophkeeperServer_All_Positive(t *testing.T) {
+func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	// run docker with postgres
 	storageContainer := testhelpers.NewTestDatabase(t)
 	dsn := storageContainer.ConnectionString(t)
@@ -116,8 +117,8 @@ func TestGophkeeperServer_All_Positive(t *testing.T) {
 	userID := loginResponse.GetToken().GetUserId()
 
 	// add jwt token for authorization
-	ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(auth.AccessToken, loginResponse.GetToken().GetToken()))
-	// TODO: debug it
+	md := metadata.New(map[string]string{auth.AccessToken: loginResponse.GetToken().GetToken()})
+	ctx = metadata.NewOutgoingContext(context.Background(), md)
 
 	// add text data
 	textSecret, err := models.NewText("text description", "text value").GetJSON()
@@ -195,7 +196,46 @@ func TestGophkeeperServer_All_Positive(t *testing.T) {
 	// Delete one secret from storage
 	secret := getDataResponse.Data[0]
 	_, err = gophkeeperClient.DeleteData(ctx, &pb.DeleteDataRequest{DataId: secret.DataId})
-	log.Printf("deleteDataResponse: %v", getDataResponse)
 
-	// TODO: add negative tests
+	// negative tests for authClient
+	_, err = authClient.Register(ctx, nil)
+	assert.NotNil(t, err)
+	log.Printf("err : %v", err.Error())
+
+	invalidUser := &pb.User{
+		Login:    "testUser",
+		Password: "invalid_password",
+	}
+	_, err = authClient.Login(ctx, &pb.LoginRequest{User: invalidUser})
+	assert.NotNil(t, err)
+	log.Printf("err : %v", err.Error())
+
+	// negative tests for gophkeeperClient
+	_, err = gophkeeperClient.AddData(ctx, nil)
+	assert.NotNil(t, err)
+	log.Printf("err : %v", err.Error())
+
+	_, err = gophkeeperClient.GetData(ctx, &pb.GetDataRequest{UserId: uuid.NewString()})
+	assert.NotNil(t, err)
+	log.Printf("err : %v", err.Error())
+
+	_, err = gophkeeperClient.GetData(ctx, &pb.GetDataRequest{UserId: "invalid_userid"})
+	assert.NotNil(t, err)
+	log.Printf("err : %v", err.Error())
+
+	_, err = gophkeeperClient.DeleteData(ctx, &pb.DeleteDataRequest{DataId: "invalid_dataid"})
+	assert.NotNil(t, err)
+	log.Printf("err : %v", err.Error())
+
+	// reset metadata and context to get authorization error
+	md = metadata.New(map[string]string{"InvalidAccessToken": loginResponse.GetToken().GetToken()})
+	ctx = metadata.NewOutgoingContext(context.Background(), md)
+	_, err = gophkeeperClient.GetData(ctx, &pb.GetDataRequest{UserId: uuid.NewString()})
+	assert.NotNil(t, err)
+	log.Printf("err : %v", err.Error())
+
+	ctx = context.Background()
+	_, err = gophkeeperClient.GetData(ctx, &pb.GetDataRequest{UserId: uuid.NewString()})
+	assert.NotNil(t, err)
+	log.Printf("err : %v", err.Error())
 }
