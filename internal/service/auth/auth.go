@@ -24,7 +24,7 @@ type UserClaims struct {
 
 type JWT interface {
 	GenerateToken(user string) (string, error)
-	ValidateToken(token string) (*UserClaims, error)
+	ValidateToken(token string) error
 }
 
 func NewJWTManager(secretKey string) *JWTManager {
@@ -55,7 +55,7 @@ func (J *JWTManager) GenerateToken(user string) (string, error) {
 	return genToken, nil
 }
 
-func (J *JWTManager) ValidateToken(accessToken string) (*UserClaims, error) {
+func (J *JWTManager) ValidateToken(accessToken string) error {
 	token, err := jwt.ParseWithClaims(
 		accessToken,
 		&UserClaims{},
@@ -70,16 +70,16 @@ func (J *JWTManager) ValidateToken(accessToken string) (*UserClaims, error) {
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("invalid token: %w", err)
+		return fmt.Errorf("invalid token: %w", err)
 	}
 
-	claims, ok := token.Claims.(*UserClaims)
+	_, ok := token.Claims.(*UserClaims)
 	if !ok {
-		return nil, fmt.Errorf("invalid token claims")
+		return fmt.Errorf("invalid token claims")
 	}
 
 	log.Debug().Msg("ValidateToken: OK")
-	return claims, nil
+	return nil
 }
 
 func EncryptPassword(pwd string) (string, error) {

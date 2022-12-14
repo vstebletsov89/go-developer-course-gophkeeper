@@ -2,8 +2,12 @@ package server
 
 import (
 	"context"
+	"github.com/rs/zerolog/log"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service/auth"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"strings"
 )
 
@@ -21,23 +25,22 @@ func (j *JwtInterceptor) UnaryInterceptor(ctx context.Context, req interface{}, 
 		return handler(ctx, req)
 	}
 
-	// TODO: implemt token validation and add it to bearer
-	//userID := uuid.NewString()
-	//
-	//if md, ok := metadata.FromIncomingContext(ctx); ok {
-	//	values := md.Get(service.AccessToken)
-	//	if len(values) > 0 {
-	//		userID = values[0]
-	//		log.Printf("UnaryInterceptor userID from context: '%s'", userID)
-	//	}
-	//}
-	//
-	//md, ok := metadata.FromIncomingContext(ctx)
-	//if ok {
-	//	md.Append(service.AccessToken, string(userID))
-	//}
-	//newCtx := metadata.NewIncomingContext(ctx, md)
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "metadata is empty")
+	}
 
+	values := md.Get(auth.AccessToken)
+	if len(values) == 0 {
+		return nil, status.Errorf(codes.Unauthenticated, "jwt token not provided")
+	}
+
+	token := values[0]
+	err := j.jwt.ValidateToken(token)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "invalid authorization token: %v", err)
+	}
+
+	log.Debug().Msg("Interceptor authorization: OK")
 	return handler(ctx, req)
-	//return handler(newCtx, req)
 }

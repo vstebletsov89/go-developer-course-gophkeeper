@@ -3,8 +3,6 @@ package server
 import (
 	"context"
 	"github.com/google/uuid"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/rs/zerolog/log"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
 	pb "github.com/vstebletsov89/go-developer-course-gophkeeper/internal/proto"
@@ -78,23 +76,4 @@ func (a *AuthServer) Login(ctx context.Context, request *pb.LoginRequest) (*pb.L
 
 	log.Debug().Msg("Server (Login): done")
 	return &response, nil
-}
-
-// AuthFunc is used by a middleware to authenticate requests.
-func (a *AuthServer) AuthFunc(ctx context.Context) (context.Context, error) {
-	token, err := grpc_auth.AuthFromMD(ctx, "bearer")
-	if err != nil {
-		return nil, err
-	}
-
-	tokenInfo, err := a.jwt.ValidateToken(token)
-	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "invalid authorization token: %v", err)
-	}
-
-	grpc_ctxtags.Extract(ctx).Set("auth.sub", tokenInfo)
-
-	newCtx := context.WithValue(ctx, auth.AccessToken, tokenInfo)
-
-	return newCtx, nil
 }

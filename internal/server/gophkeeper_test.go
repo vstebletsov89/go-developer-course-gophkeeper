@@ -8,9 +8,11 @@ import (
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/config"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
 	pb "github.com/vstebletsov89/go-developer-course-gophkeeper/internal/proto"
+	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service/auth"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/storage/postgres/testhelpers"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"log"
 	"testing"
 )
@@ -41,74 +43,6 @@ CREATE TABLE IF NOT EXISTS data (
     created_at  timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 `
-
-func TestAuthServer_All_Negative(t *testing.T) {
-	// start client
-	conn, err := grpc.Dial(":8888", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		assert.NoError(t, err)
-	}
-
-	defer func(conn *grpc.ClientConn) {
-		err := conn.Close()
-		if err != nil {
-			assert.NoError(t, err)
-		}
-	}(conn)
-
-	c := pb.NewAuthClient(conn)
-
-	ctx := context.Background()
-
-	// Register
-	_, err = c.Register(ctx, &pb.RegisterRequest{User: &pb.User{
-		Login:    "login",
-		Password: "password",
-	}})
-	assert.NotNil(t, err)
-
-	// Login
-	_, err = c.Login(ctx, &pb.LoginRequest{User: &pb.User{
-		Login:    "login",
-		Password: "password",
-	}})
-	assert.NotNil(t, err)
-}
-
-func TestGophkeeperServer_All_Negative(t *testing.T) {
-	// start client
-	conn, err := grpc.Dial(":9999", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		assert.NoError(t, err)
-	}
-
-	defer func(conn *grpc.ClientConn) {
-		err := conn.Close()
-		if err != nil {
-			assert.NoError(t, err)
-		}
-	}(conn)
-
-	c := pb.NewGophkeeperClient(conn)
-
-	ctx := context.Background()
-
-	// AddData
-	_, err = c.AddData(ctx, &pb.AddDataRequest{Data: &pb.Data{
-		UserId:     "userID",
-		DataType:   0,
-		DataBinary: nil,
-	}})
-	assert.NotNil(t, err)
-
-	// DeleteData
-	_, err = c.DeleteData(ctx, &pb.DeleteDataRequest{DataId: "dataID"})
-	assert.NotNil(t, err)
-
-	// GetData
-	_, err = c.GetData(ctx, &pb.GetDataRequest{UserId: "userID"})
-	assert.NotNil(t, err)
-}
 
 func migrateTables(pool *pgxpool.Pool) error {
 	log.Println("Migration started..")
@@ -180,6 +114,10 @@ func TestGophkeeperServer_All_Positive(t *testing.T) {
 	assert.NotNil(t, loginResponse.GetToken().GetToken())
 
 	userID := loginResponse.GetToken().GetUserId()
+
+	// add jwt token for authorization
+	ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(auth.AccessToken, loginResponse.GetToken().GetToken()))
+	// TODO: debug it
 
 	// add text data
 	textSecret, err := models.NewText("text description", "text value").GetJSON()
@@ -258,4 +196,6 @@ func TestGophkeeperServer_All_Positive(t *testing.T) {
 	secret := getDataResponse.Data[0]
 	_, err = gophkeeperClient.DeleteData(ctx, &pb.DeleteDataRequest{DataId: secret.DataId})
 	log.Printf("deleteDataResponse: %v", getDataResponse)
+
+	// TODO: add negative tests
 }
