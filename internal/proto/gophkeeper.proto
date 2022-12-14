@@ -13,8 +13,9 @@ enum DataType {
 
 message Data {
   string user_id = 1;
-  DataType data_type = 2;
-  bytes  data_binary = 3;
+  string data_id = 2;
+  DataType data_type = 3;
+  bytes  data_binary = 4;
 }
 
 message AddDataRequest {

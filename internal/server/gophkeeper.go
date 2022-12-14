@@ -10,7 +10,7 @@ import (
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/storage/postgres"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 	"net"
 	"os"
@@ -134,13 +134,18 @@ func RunServer(cfg *config.Config) error {
 
 	// create new service
 	svc := service.NewService(storage)
+
+	jwtManager := auth.NewJWTManager(cfg.LogLevel)
+	jwt := NewJwtInterceptor(jwtManager)
+	authServer := NewAuthServer(*svc, jwtManager)
+	gophkeeperServer := NewGophkeeperServer(*svc)
+
 	var grpcSrv *grpc.Server
 
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
-	// TODO: add TLS support and credentials
-	// start GRPC server with TLS
+	// start GRPC server with/without TLS
 	g.Go(func() error {
 		listen, err := net.Listen("tcp", cfg.ServerAddress)
 		if err != nil {
@@ -148,11 +153,28 @@ func RunServer(cfg *config.Config) error {
 			return err
 		}
 
-		jwtManager := auth.NewJWTManager(cfg.LogLevel)
+		if cfg.EnableTLS {
+			// Server using TLS credentials
+			log.Info().Msg("GRPC server configuration with TLS credentials")
+			transportCredentials, err := credentials.NewServerTLSFromFile("cert.pem", "key.pem")
+			if err != nil {
+				log.Error().Msgf("GRPC server credentials.NewServerTLSFromFile: %v", err.Error())
+				return err
+			}
 
-		grpcSrv = grpc.NewServer(grpc.UnaryInterceptor(UnaryInterceptor))
-		pb.RegisterAuthServer(grpcSrv, NewAuthServer(*svc, jwtManager))
-		pb.RegisterGophkeeperServer(grpcSrv, NewGophkeeperServer(*svc))
+			grpcSrv = grpc.NewServer(
+				grpc.Creds(transportCredentials),
+				grpc.UnaryInterceptor(jwt.UnaryInterceptor))
+			pb.RegisterAuthServer(grpcSrv, authServer)
+			pb.RegisterGophkeeperServer(grpcSrv, gophkeeperServer)
+		} else {
+			// server without TLS credentials
+			log.Info().Msg("GRPC server configuration without TLS credentials")
+			grpcSrv = grpc.NewServer(
+				grpc.UnaryInterceptor(jwt.UnaryInterceptor))
+			pb.RegisterAuthServer(grpcSrv, authServer)
+			pb.RegisterGophkeeperServer(grpcSrv, gophkeeperServer)
+		}
 
 		log.Info().Msgf("GRPC server started on %v", cfg.ServerAddress)
 		// start grc server
@@ -191,24 +213,4 @@ func connectDB(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 		return nil, err
 	}
 	return pool, nil
-}
-
-func UnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	// TODO: think about it (extract current JWT token and check it is valid)
-
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		values := md.Get("service.AccessToken")
-		if len(values) > 0 {
-			//userID = values[0]
-			//log.Printf("UnaryInterceptor userID from context: '%s'", userID)
-		}
-	}
-
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		//md.Append("service.AccessToke"n, string("userID"))
-	}
-	newCtx := metadata.NewIncomingContext(ctx, md)
-
-	return handler(newCtx, req)
 }

@@ -13,6 +13,7 @@ type Config struct {
 	ServerAddress string `env:"SERVER_ADDRESS" envDefault:"localhost:8080" json:"serverAddress"`
 	DatabaseDsn   string `env:"DATABASE_DSN" envDefault:"user=postgres dbname=postgres password=postgres host=localhost sslmode=disable" json:"databaseDsn"` //nolint:lll
 	JwtSecretKey  string `env:"JWT_SECRET" envDefault:"secret_key" json:"jwtSecretKey"`
+	EnableTLS     bool   `env:"ENABLE_TLS" envDefault:"false" json:"enableTLS"`
 	LogLevel      string `env:"LOG_LEVEL" envDefault:"debug"`
 }
 
@@ -24,6 +25,7 @@ func (c *Config) readCommandLineArgs() {
 		flag.StringVar(&c.DatabaseDsn, "d", c.DatabaseDsn, "database dsn")
 		flag.StringVar(&c.LogLevel, "l", c.LogLevel, "log level")
 		flag.StringVar(&c.JwtSecretKey, "j", c.JwtSecretKey, "jwt secret key")
+		flag.BoolVar(&c.EnableTLS, "s", c.EnableTLS, "enable secure mode")
 		flag.Parse()
 	})
 }

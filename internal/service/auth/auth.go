@@ -2,18 +2,16 @@
 package auth
 
 import (
-	"context"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
 	"golang.org/x/crypto/bcrypt"
-	"google.golang.org/grpc/metadata"
 	"time"
 )
 
 const (
-	AccessToken = "uniqueAuthToken"
+	AccessToken = "tokenInfo"
 )
 
 type JWTManager struct {
@@ -105,19 +103,4 @@ func IsUserAuthorized(user *models.User, userDB *models.User) (bool, error) {
 	log.Debug().Msg("User authorized")
 	// user authorized
 	return true, nil
-}
-
-func ExtractUserIDFromContext(ctx context.Context) string {
-	// TODO: update it
-	// try to get userID from metadata
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		values := md.Get(AccessToken)
-		if len(values) > 0 {
-			userID := values[0]
-			log.Debug().Msgf("ExtractUserIDFromContext (GRPC): '%s'", userID)
-			return userID
-		}
-	}
-	return "" // token not found
 }

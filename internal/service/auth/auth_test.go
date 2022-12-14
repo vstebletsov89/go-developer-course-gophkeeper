@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
 	"reflect"
@@ -31,30 +30,6 @@ func TestEncryptPassword(t *testing.T) {
 				return
 			}
 			assert.NotEqual(t, tt.args.pwd, got)
-		})
-	}
-}
-
-func TestExtractUserIDFromContext(t *testing.T) {
-	type args struct {
-		ctx context.Context
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "positive test",
-			args: args{ctx: context.Background()},
-			want: "",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ExtractUserIDFromContext(tt.args.ctx); got != tt.want {
-				t.Errorf("ExtractUserIDFromContext() = %v, want %v", got, tt.want)
-			}
 		})
 	}
 }

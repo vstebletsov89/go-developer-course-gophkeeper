@@ -45,7 +45,7 @@ func (d *DBStorage) RegisterUser(ctx context.Context, user models.User) error {
 		return err
 	}
 
-	log.Debug().Msg("User registered")
+	log.Debug().Msgf("User registered %+v", user)
 	return nil
 }
 

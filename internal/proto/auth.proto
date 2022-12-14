@@ -10,7 +10,7 @@ message User {
 }
 
 message Token {
-  string login = 1;
+  string user_id = 1;
   string token = 2;
 }
 

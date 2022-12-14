@@ -99,6 +99,7 @@ func DecryptPrivateData(data models.Data) (*proto.Data, error) {
 		return nil, err
 	}
 
+	securedData.DataId = data.ID
 	securedData.UserId = data.UserID
 	securedData.DataType = proto.DataType(data.DataType)
 	securedData.DataBinary = decryptedBinary

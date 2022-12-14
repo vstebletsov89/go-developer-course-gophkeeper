@@ -18,6 +18,7 @@ func TestReadConfig(t *testing.T) {
 				DatabaseDsn:   "user=postgres dbname=postgres password=postgres host=localhost sslmode=disable",
 				JwtSecretKey:  "secret_key",
 				LogLevel:      "debug",
+				EnableTLS:     false,
 			},
 		},
 	}
