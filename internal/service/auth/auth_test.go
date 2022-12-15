@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
+	"google.golang.org/grpc/metadata"
 	"reflect"
 	"testing"
 )
@@ -193,6 +195,38 @@ func TestNewJWTManager(t *testing.T) {
 			if got := NewJWTManager(tt.args.secretKey); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewJWTManager() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestExtractUserIDFromContext(t *testing.T) {
+	tests := []struct {
+		name    string
+		user    string
+		want    string
+		wantErr bool
+	}{
+		{
+			name:    "positive test",
+			user:    "testUser",
+			want:    "testUser",
+			wantErr: false,
+		},
+		{
+			name:    "negative test",
+			user:    "testUser",
+			want:    "",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			if !tt.wantErr {
+				md := metadata.New(map[string]string{UserCtx: tt.user})
+				ctx = metadata.NewIncomingContext(context.Background(), md)
+			}
+			assert.Equalf(t, tt.want, ExtractUserIDFromContext(ctx), tt.want)
 		})
 	}
 }

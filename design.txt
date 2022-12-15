@@ -1,12 +1,15 @@
 TODO:
-  https://dev.to/techschoolguru/use-grpc-interceptor-for-authorization-with-jwt-1c5h
-  https://github.com/MaksimDzhangirov/complete-gRPC/blob/main/lecture15_rus.md
+
  * implement client
+ * добавить информацию о версии и дате сборки для клиента
  * makefiles для разных ОС
  * клиент должен распространяться в виде CLI-приложения с возможностью запуска на платформах Windows, Linux и Mac OS;
  * клиент должен давать пользователю возможность получить информацию о версии и дате сборки бинарного файла клиента.
  * добавить github hooks если будет время
- * swagger?
+
+ JWT :
+   https://dev.to/techschoolguru/use-grpc-interceptor-for-authorization-with-jwt-1c5h
+   https://github.com/MaksimDzhangirov/complete-gRPC/blob/main/lecture15_rus.md
 
 ------------------------------------------------------------------------------------------------------------------------
 GOPHKEEPER DESIGN

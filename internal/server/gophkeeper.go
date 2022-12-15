@@ -35,8 +35,10 @@ func NewGophkeeperServer(service service.Service) *GophkeeperServer {
 }
 
 func (g *GophkeeperServer) AddData(ctx context.Context, request *pb.AddDataRequest) (*pb.AddDataResponse, error) {
+	userID := auth.ExtractUserIDFromContext(ctx)
+
 	var response pb.AddDataResponse
-	data, err := secure.EncryptPrivateData(request.GetData())
+	data, err := secure.EncryptPrivateData(request.GetData(), userID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -51,9 +53,10 @@ func (g *GophkeeperServer) AddData(ctx context.Context, request *pb.AddDataReque
 }
 
 func (g *GophkeeperServer) GetData(ctx context.Context, request *pb.GetDataRequest) (*pb.GetDataResponse, error) {
+	userID := auth.ExtractUserIDFromContext(ctx)
 	var response pb.GetDataResponse
 
-	data, err := g.service.GetDataByUserID(ctx, request.GetUserId())
+	data, err := g.service.GetDataByUserID(ctx, userID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

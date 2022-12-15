@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 	"errors"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/config"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
@@ -114,10 +114,9 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	assert.NotNil(t, loginResponse.GetToken().GetUserId())
 	assert.NotNil(t, loginResponse.GetToken().GetToken())
 
-	userID := loginResponse.GetToken().GetUserId()
-
 	// add jwt token for authorization
-	md := metadata.New(map[string]string{auth.AccessToken: loginResponse.GetToken().GetToken()})
+	md := metadata.New(map[string]string{auth.AccessToken: loginResponse.GetToken().GetToken(),
+		auth.UserCtx: loginResponse.GetToken().GetUserId()})
 	ctx = metadata.NewOutgoingContext(context.Background(), md)
 
 	// add text data
@@ -125,7 +124,6 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	assert.NoError(t, err)
 
 	textData := &pb.AddDataRequest{Data: &pb.Data{
-		UserId:     userID,
 		DataType:   pb.DataType_TEXT_TYPE,
 		DataBinary: textSecret,
 	}}
@@ -137,7 +135,6 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	assert.NoError(t, err)
 
 	binaryData := &pb.AddDataRequest{Data: &pb.Data{
-		UserId:     userID,
 		DataType:   pb.DataType_BINARY_TYPE,
 		DataBinary: binarySecret,
 	}}
@@ -149,7 +146,6 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	assert.NoError(t, err)
 
 	cardData := &pb.AddDataRequest{Data: &pb.Data{
-		UserId:     userID,
 		DataType:   pb.DataType_CARD_TYPE,
 		DataBinary: cardSecret,
 	}}
@@ -161,7 +157,6 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	assert.NoError(t, err)
 
 	credentialsData := &pb.AddDataRequest{Data: &pb.Data{
-		UserId:     userID,
 		DataType:   pb.DataType_CREDENTIALS_TYPE,
 		DataBinary: credentialsSecret,
 	}}
@@ -169,12 +164,11 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Get all secret data for current user
-	getDataResponse, err := gophkeeperClient.GetData(ctx, &pb.GetDataRequest{UserId: userID})
+	getDataResponse, err := gophkeeperClient.GetData(ctx, &pb.GetDataRequest{})
 	log.Printf("getDataResponse: %v", getDataResponse)
 
 	for _, secret := range getDataResponse.Data {
 		log.Printf("secret from storage %v", secret)
-		assert.Equal(t, userID, secret.UserId)
 		switch secret.GetDataType() {
 		case pb.DataType_CREDENTIALS_TYPE:
 			assert.Equal(t, credentialsSecret, secret.GetDataBinary())
@@ -215,14 +209,6 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	assert.NotNil(t, err)
 	log.Printf("err : %v", err.Error())
 
-	_, err = gophkeeperClient.GetData(ctx, &pb.GetDataRequest{UserId: uuid.NewString()})
-	assert.NotNil(t, err)
-	log.Printf("err : %v", err.Error())
-
-	_, err = gophkeeperClient.GetData(ctx, &pb.GetDataRequest{UserId: "invalid_userid"})
-	assert.NotNil(t, err)
-	log.Printf("err : %v", err.Error())
-
 	_, err = gophkeeperClient.DeleteData(ctx, &pb.DeleteDataRequest{DataId: "invalid_dataid"})
 	assert.NotNil(t, err)
 	log.Printf("err : %v", err.Error())
@@ -230,12 +216,71 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	// reset metadata and context to get authorization error
 	md = metadata.New(map[string]string{"InvalidAccessToken": loginResponse.GetToken().GetToken()})
 	ctx = metadata.NewOutgoingContext(context.Background(), md)
-	_, err = gophkeeperClient.GetData(ctx, &pb.GetDataRequest{UserId: uuid.NewString()})
+	_, err = gophkeeperClient.GetData(ctx, &pb.GetDataRequest{})
 	assert.NotNil(t, err)
 	log.Printf("err : %v", err.Error())
 
 	ctx = context.Background()
-	_, err = gophkeeperClient.GetData(ctx, &pb.GetDataRequest{UserId: uuid.NewString()})
+	_, err = gophkeeperClient.GetData(ctx, &pb.GetDataRequest{})
 	assert.NotNil(t, err)
 	log.Printf("err : %v", err.Error())
+}
+
+func Test_parseLogLevel(t *testing.T) {
+	tests := []struct {
+		name  string
+		level string
+		want  zerolog.Level
+	}{
+		{
+			name:  "trace level",
+			level: "trace",
+			want:  zerolog.TraceLevel,
+		},
+		{
+			name:  "debug level",
+			level: "debug",
+			want:  zerolog.DebugLevel,
+		},
+		{
+			name:  "info level",
+			level: "info",
+			want:  zerolog.InfoLevel,
+		},
+		{
+			name:  "warn level",
+			level: "warn",
+			want:  zerolog.WarnLevel,
+		},
+		{
+			name:  "error level",
+			level: "error",
+			want:  zerolog.ErrorLevel,
+		},
+		{
+			name:  "fatal level",
+			level: "fatal",
+			want:  zerolog.FatalLevel,
+		},
+		{
+			name:  "panic level",
+			level: "panic",
+			want:  zerolog.PanicLevel,
+		},
+		{
+			name:  "disabled level",
+			level: "disabled",
+			want:  zerolog.Disabled,
+		},
+		{
+			name:  "default level",
+			level: "default",
+			want:  zerolog.InfoLevel,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, parseLogLevel(tt.level), "parseLogLevel(%v)", tt.level)
+		})
+	}
 }

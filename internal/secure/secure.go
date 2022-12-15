@@ -77,7 +77,7 @@ func Decrypt(data []byte) ([]byte, error) {
 	return decrypted, nil
 }
 
-func EncryptPrivateData(data *proto.Data) (models.Data, error) {
+func EncryptPrivateData(data *proto.Data, userID string) (models.Data, error) {
 	var securedData models.Data
 	encryptedBinary, err := Encrypt(data.GetDataBinary())
 	if err != nil {
@@ -85,7 +85,7 @@ func EncryptPrivateData(data *proto.Data) (models.Data, error) {
 	}
 
 	securedData.ID = uuid.NewString()
-	securedData.UserID = data.GetUserId()
+	securedData.UserID = userID
 	securedData.DataType = models.DataType(data.GetDataType())
 	securedData.DataBinary = encryptedBinary
 
@@ -100,7 +100,6 @@ func DecryptPrivateData(data models.Data) (*proto.Data, error) {
 	}
 
 	securedData.DataId = data.ID
-	securedData.UserId = data.UserID
 	securedData.DataType = proto.DataType(data.DataType)
 	securedData.DataBinary = decryptedBinary
 

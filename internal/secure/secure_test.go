@@ -56,7 +56,6 @@ func TestDecryptPrivateData(t *testing.T) {
 		{
 			name: "positive test",
 			args: args{data: &proto.Data{
-				UserId:     "userid",
 				DataType:   0,
 				DataBinary: []byte("some binary data"),
 			}},
@@ -66,7 +65,7 @@ func TestDecryptPrivateData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			encrypted, err := EncryptPrivateData(tt.args.data)
+			encrypted, err := EncryptPrivateData(tt.args.data, "userId")
 			assert.NoError(t, err)
 
 			got, err := DecryptPrivateData(encrypted)
@@ -119,7 +118,6 @@ func TestEncryptPrivateData(t *testing.T) {
 		{
 			name: "positive test",
 			args: args{data: &proto.Data{
-				UserId:     "userid",
 				DataType:   0,
 				DataBinary: []byte("some binary data"),
 			}},
@@ -129,7 +127,7 @@ func TestEncryptPrivateData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := EncryptPrivateData(tt.args.data)
+			got, err := EncryptPrivateData(tt.args.data, "userID")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("EncryptPrivateData() error = %v, wantErr %v", err, tt.wantErr)
 				return
