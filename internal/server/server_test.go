@@ -2,9 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/config"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
@@ -29,32 +26,6 @@ func startGrpcServer() {
 	}
 }
 
-const PostgreSQLTables = `
-CREATE TABLE IF NOT EXISTS users (
-    id       uuid NOT NULL PRIMARY KEY,
-    login    text NOT NULL UNIQUE,
-    password text NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS data (
-    id          uuid        NOT NULL PRIMARY KEY,
-    user_id     uuid        REFERENCES users(id) ON DELETE CASCADE,
-    data_type   integer     NOT NULL,
-    data_binary bytea       NOT NULL,
-    created_at  timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-`
-
-func migrateTables(pool *pgxpool.Pool) error {
-	log.Println("Migration started..")
-	_, err := pool.Exec(context.Background(), PostgreSQLTables)
-	if err != nil {
-		return err
-	}
-	log.Println("Migration done")
-	return nil
-}
-
 func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	// run docker with postgres
 	storageContainer := testhelpers.NewTestDatabase(t)
@@ -64,14 +35,14 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	t.Setenv("SERVER_ADDRESS", "localhost:3201")
 
 	// connect to db only for migrations
-	db, err := connectDB(context.Background(), dsn)
+	db, err := testhelpers.ConnectDB(context.Background(), dsn)
 	if err != nil {
-		log.Fatalf("connectDB error: %s", err)
+		log.Fatalf("ConnectDB error: %s", err)
 	}
 	assert.NoError(t, err)
 
 	// do migration
-	err = migrateTables(db)
+	err = testhelpers.MigrateTables(db)
 	assert.NoError(t, err)
 
 	// close connection (it will be opened during start of server)
@@ -97,7 +68,7 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	ctx := context.Background()
 
 	user := &pb.User{
-		Login:    "testUser",
+		Login:    "serverUser",
 		Password: "password",
 	}
 
@@ -183,7 +154,7 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 			assert.Equal(t, cardSecret, secret.GetDataBinary())
 			break
 		default:
-			errors.New("invalid data type")
+			assert.Equal(t, "correct_type", "invalid_type_from_server")
 		}
 	}
 
@@ -224,63 +195,4 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	_, err = gophkeeperClient.GetData(ctx, &pb.GetDataRequest{})
 	assert.NotNil(t, err)
 	log.Printf("err : %v", err.Error())
-}
-
-func Test_parseLogLevel(t *testing.T) {
-	tests := []struct {
-		name  string
-		level string
-		want  zerolog.Level
-	}{
-		{
-			name:  "trace level",
-			level: "trace",
-			want:  zerolog.TraceLevel,
-		},
-		{
-			name:  "debug level",
-			level: "debug",
-			want:  zerolog.DebugLevel,
-		},
-		{
-			name:  "info level",
-			level: "info",
-			want:  zerolog.InfoLevel,
-		},
-		{
-			name:  "warn level",
-			level: "warn",
-			want:  zerolog.WarnLevel,
-		},
-		{
-			name:  "error level",
-			level: "error",
-			want:  zerolog.ErrorLevel,
-		},
-		{
-			name:  "fatal level",
-			level: "fatal",
-			want:  zerolog.FatalLevel,
-		},
-		{
-			name:  "panic level",
-			level: "panic",
-			want:  zerolog.PanicLevel,
-		},
-		{
-			name:  "disabled level",
-			level: "disabled",
-			want:  zerolog.Disabled,
-		},
-		{
-			name:  "default level",
-			level: "default",
-			want:  zerolog.InfoLevel,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, parseLogLevel(tt.level), "parseLogLevel(%v)", tt.level)
-		})
-	}
 }

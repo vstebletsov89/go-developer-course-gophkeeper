@@ -3,6 +3,7 @@ package config
 
 import (
 	"flag"
+	"github.com/rs/zerolog"
 	"sync"
 
 	"github.com/caarlos0/env/v6"
@@ -41,4 +42,26 @@ func ReadConfig() (*Config, error) {
 	cfg.readCommandLineArgs()
 
 	return &cfg, nil
+}
+
+func ParseLogLevel(level string) zerolog.Level {
+	switch level {
+	case "trace":
+		return zerolog.TraceLevel
+	case "debug":
+		return zerolog.DebugLevel
+	case "info":
+		return zerolog.InfoLevel
+	case "warn":
+		return zerolog.WarnLevel
+	case "error":
+		return zerolog.ErrorLevel
+	case "fatal":
+		return zerolog.FatalLevel
+	case "panic":
+		return zerolog.PanicLevel
+	case "disabled":
+		return zerolog.Disabled
+	}
+	return zerolog.InfoLevel
 }

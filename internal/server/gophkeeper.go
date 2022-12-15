@@ -85,34 +85,12 @@ func (g *GophkeeperServer) DeleteData(ctx context.Context, request *pb.DeleteDat
 	return &response, nil
 }
 
-func parseLogLevel(level string) zerolog.Level {
-	switch level {
-	case "trace":
-		return zerolog.TraceLevel
-	case "debug":
-		return zerolog.DebugLevel
-	case "info":
-		return zerolog.InfoLevel
-	case "warn":
-		return zerolog.WarnLevel
-	case "error":
-		return zerolog.ErrorLevel
-	case "fatal":
-		return zerolog.FatalLevel
-	case "panic":
-		return zerolog.PanicLevel
-	case "disabled":
-		return zerolog.Disabled
-	}
-	return zerolog.InfoLevel
-}
-
 func RunServer(cfg *config.Config) error {
 	// init global logger
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 	// default log level is info
-	zerolog.SetGlobalLevel(parseLogLevel(cfg.LogLevel))
+	zerolog.SetGlobalLevel(config.ParseLogLevel(cfg.LogLevel))
 
 	// debug config
 	log.Debug().Msgf("%+v\n\n", cfg)
@@ -138,7 +116,7 @@ func RunServer(cfg *config.Config) error {
 	// create new service
 	svc := service.NewService(storage)
 
-	jwtManager := auth.NewJWTManager(cfg.LogLevel)
+	jwtManager := auth.NewJWTManager(cfg.JwtSecretKey)
 	jwt := NewJwtInterceptor(jwtManager)
 	authServer := NewAuthServer(*svc, jwtManager)
 	gophkeeperServer := NewGophkeeperServer(*svc)
@@ -168,16 +146,15 @@ func RunServer(cfg *config.Config) error {
 			grpcSrv = grpc.NewServer(
 				grpc.Creds(transportCredentials),
 				grpc.UnaryInterceptor(jwt.UnaryInterceptor))
-			pb.RegisterAuthServer(grpcSrv, authServer)
-			pb.RegisterGophkeeperServer(grpcSrv, gophkeeperServer)
 		} else {
 			// server without TLS credentials
 			log.Info().Msg("GRPC server configuration without TLS credentials")
 			grpcSrv = grpc.NewServer(
 				grpc.UnaryInterceptor(jwt.UnaryInterceptor))
-			pb.RegisterAuthServer(grpcSrv, authServer)
-			pb.RegisterGophkeeperServer(grpcSrv, gophkeeperServer)
 		}
+
+		pb.RegisterAuthServer(grpcSrv, authServer)
+		pb.RegisterGophkeeperServer(grpcSrv, gophkeeperServer)
 
 		log.Info().Msgf("GRPC server started on %v", cfg.ServerAddress)
 		// start grc server

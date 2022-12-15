@@ -1,11 +1,10 @@
 TODO:
 
  * implement client
- * добавить информацию о версии и дате сборки для клиента
  * makefiles для разных ОС
  * клиент должен распространяться в виде CLI-приложения с возможностью запуска на платформах Windows, Linux и Mac OS;
  * клиент должен давать пользователю возможность получить информацию о версии и дате сборки бинарного файла клиента.
- * добавить github hooks если будет время
+ * добавить github hooks
 
  JWT :
    https://dev.to/techschoolguru/use-grpc-interceptor-for-authorization-with-jwt-1c5h
@@ -71,19 +70,6 @@ service Gophkeeper {
 
 +RefreshPassword (reset passsword)
 
-CREATE TABLE IF NOT EXISTS "users" (
-    id       text NOT NULL PRIMARY KEY,         // уникальный идентификатор пользователя (uuid)
-    login    text NOT NULL UNIQUE,              // логин пользователя уникальный
-    password text NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "data" (
-    id          text NOT NULL PRIMARY KEY, // уникальный идентификатор данных (uuid)
-    user        text NOT NULL,             // идентификатор пользователя (uuid)
-    +FOREIGN KEY REFERENCES
-    type        text NOT NULL,
-    data        bytea NOT NULL             // буду хранить текущий тип как бинарные данные
-);
 
 uuid лучше использовать для postgres типа
 

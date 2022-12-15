@@ -37,7 +37,7 @@ func NewJWTManager(secretKey string) *JWTManager {
 // check that JWTManager implements all required methods.
 var _ JWT = (*JWTManager)(nil)
 
-func (J *JWTManager) GenerateToken(user string) (string, error) {
+func (j *JWTManager) GenerateToken(user string) (string, error) {
 	claims := UserClaims{RegisteredClaims: jwt.RegisteredClaims{
 		Issuer:    "Gophkeeper",
 		Subject:   "authorization",
@@ -49,7 +49,7 @@ func (J *JWTManager) GenerateToken(user string) (string, error) {
 	}}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	genToken, err := token.SignedString([]byte(J.secretKey))
+	genToken, err := token.SignedString([]byte(j.secretKey))
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +58,7 @@ func (J *JWTManager) GenerateToken(user string) (string, error) {
 	return genToken, nil
 }
 
-func (J *JWTManager) ValidateToken(accessToken string) error {
+func (j *JWTManager) ValidateToken(accessToken string) error {
 	token, err := jwt.ParseWithClaims(
 		accessToken,
 		&UserClaims{},
@@ -68,7 +68,7 @@ func (J *JWTManager) ValidateToken(accessToken string) error {
 				return nil, fmt.Errorf("unexpected token signing method")
 			}
 
-			return []byte(J.secretKey), nil
+			return []byte(j.secretKey), nil
 		},
 	)
 

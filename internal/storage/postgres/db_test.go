@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
@@ -29,42 +28,6 @@ type StorageTestSuite struct {
 	container *testhelpers.TestDatabase
 }
 
-const PostgreSQLTables = `
-CREATE TABLE IF NOT EXISTS users (
-    id       uuid NOT NULL PRIMARY KEY,
-    login    text NOT NULL UNIQUE,
-    password text NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS data (
-    id          uuid        NOT NULL PRIMARY KEY,
-    user_id     uuid        REFERENCES users(id) ON DELETE CASCADE,
-    data_type   integer     NOT NULL,
-    data_binary bytea       NOT NULL,
-    created_at  timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-`
-
-func migrateTables(pool *pgxpool.Pool) error {
-	log.Info().Msg("Migration started..")
-	_, err := pool.Exec(context.Background(), PostgreSQLTables)
-	if err != nil {
-		return err
-	}
-	log.Info().Msg("Migration done")
-	return nil
-}
-
-func connectDB(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
-	log.Debug().Msg("Connect to DB...")
-	pool, err := pgxpool.New(ctx, databaseURL)
-	if err != nil {
-		log.Error().Msgf("Failed to connect to database. Error: %v", err.Error())
-		return nil, err
-	}
-	return pool, nil
-}
-
 func (sts *StorageTestSuite) SetupTest() {
 	// init global logger
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
@@ -81,11 +44,11 @@ func (sts *StorageTestSuite) SetupTest() {
 	cfg, err := config.ReadConfig()
 	require.NoError(sts.T(), err)
 
-	pool, err := connectDB(context.Background(), cfg.DatabaseDsn)
+	pool, err := testhelpers.ConnectDB(context.Background(), cfg.DatabaseDsn)
 	require.NoError(sts.T(), err)
 
 	// migrations
-	err = migrateTables(pool)
+	err = testhelpers.MigrateTables(pool)
 	require.NoError(sts.T(), err)
 
 	db := NewDBStorage(pool)
