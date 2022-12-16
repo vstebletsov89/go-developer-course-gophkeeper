@@ -12,16 +12,19 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// AuthServer represents a structure for authorization service.
 type AuthServer struct {
 	pb.UnimplementedAuthServer
 	service service.Service
 	jwt     auth.JWT
 }
 
+// NewAuthServer returns an instance of AuthServer.
 func NewAuthServer(service service.Service, jwt auth.JWT) *AuthServer {
 	return &AuthServer{service: service, jwt: jwt}
 }
 
+// Register is a registration of the new user with encrypted password.
 func (a *AuthServer) Register(ctx context.Context, request *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	var response pb.RegisterResponse
 
@@ -45,6 +48,7 @@ func (a *AuthServer) Register(ctx context.Context, request *pb.RegisterRequest) 
 	return &response, nil
 }
 
+// Login is a login of existing user in the service. JWT token returns in case of success.
 func (a *AuthServer) Login(ctx context.Context, request *pb.LoginRequest) (*pb.LoginResponse, error) {
 	var response pb.LoginResponse
 

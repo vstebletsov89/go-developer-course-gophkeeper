@@ -44,6 +44,7 @@ func ReadConfig() (*Config, error) {
 	return &cfg, nil
 }
 
+// ParseLogLevel is a helper function to parse log level for zerolog.
 func ParseLogLevel(level string) zerolog.Level {
 	switch level {
 	case "trace":

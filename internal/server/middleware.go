@@ -11,14 +11,17 @@ import (
 	"strings"
 )
 
+// JwtInterceptor represents a structure for jwt interceptor.
 type JwtInterceptor struct {
 	jwt auth.JWT
 }
 
+// NewJwtInterceptor returns an instance of JwtInterceptor.
 func NewJwtInterceptor(jwt auth.JWT) *JwtInterceptor {
 	return &JwtInterceptor{jwt: jwt}
 }
 
+// UnaryInterceptor grpc interceptor to validate access token. It is used for authorization of users.
 func (j *JwtInterceptor) UnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	if strings.Contains(info.FullMethod, "Register") || strings.Contains(info.FullMethod, "Login") {
 		// skip validation jwt token for register and login

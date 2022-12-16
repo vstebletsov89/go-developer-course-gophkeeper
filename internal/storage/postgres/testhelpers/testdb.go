@@ -1,3 +1,4 @@
+// Package testhelpers allows testing postgres database using docker.
 package testhelpers
 
 // usage:
@@ -16,10 +17,12 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
+// TestDatabase represents a structure for testing database.
 type TestDatabase struct {
 	instance testcontainers.Container
 }
 
+// NewTestDatabase returns an instance of TestDatabase.
 func NewTestDatabase(t *testing.T) *TestDatabase {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
@@ -44,6 +47,7 @@ func NewTestDatabase(t *testing.T) *TestDatabase {
 	}
 }
 
+// Port returns a port for postgres database.
 func (db *TestDatabase) Port(t *testing.T) int {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
@@ -52,16 +56,19 @@ func (db *TestDatabase) Port(t *testing.T) int {
 	return p.Int()
 }
 
+// ConnectionString returns a connection string for postgres database.
 func (db *TestDatabase) ConnectionString(t *testing.T) string {
 	return fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:%d/postgres", db.Port(t))
 }
 
+// Close closes database connection in current docker container.
 func (db *TestDatabase) Close(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	require.NoError(t, db.instance.Terminate(ctx))
 }
 
+// Host returns a host for postgres database.
 func (db *TestDatabase) Host() string {
 	return "localhost"
 }

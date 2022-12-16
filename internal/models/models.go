@@ -46,14 +46,17 @@ type Credentials struct {
 	Password    string `json:"password"`
 }
 
+// NewCredentials returns an instance of Credentials.
 func NewCredentials(description string, login string, password string) *Credentials {
 	return &Credentials{Description: description, Login: login, Password: password}
 }
 
+// GetType getter for Credentials type.
 func (p Credentials) GetType() DataType {
 	return CREDENTIALS_TYPE
 }
 
+// GetJSON getter for Credentials binary data.
 func (p Credentials) GetJSON() ([]byte, error) {
 	data, err := json.Marshal(p)
 	if err != nil {
@@ -72,14 +75,17 @@ type Text struct {
 	Value       string `json:"value"`
 }
 
+// NewText returns an instance of Text.
 func NewText(description string, value string) *Text {
 	return &Text{Description: description, Value: value}
 }
 
+// GetType getter for Text type.
 func (t Text) GetType() DataType {
 	return TEXT_TYPE
 }
 
+// GetJSON getter for Text binary data.
 func (t Text) GetJSON() ([]byte, error) {
 	data, err := json.Marshal(t)
 	if err != nil {
@@ -98,14 +104,17 @@ type Binary struct {
 	Value       []byte `json:"value"`
 }
 
+// NewBinary returns an instance of Binary.
 func NewBinary(description string, value []byte) *Binary {
 	return &Binary{Description: description, Value: value}
 }
 
+// GetType getter for Binary type.
 func (b Binary) GetType() DataType {
 	return BINARY_TYPE
 }
 
+// GetJSON getter for Binary binary data.
 func (b Binary) GetJSON() ([]byte, error) {
 	data, err := json.Marshal(b)
 	if err != nil {
@@ -127,14 +136,17 @@ type Card struct {
 	CVV         string `json:"cvv"`
 }
 
+// NewCard returns an instance of Card.
 func NewCard(description string, name string, number string, date string, cvv string) *Card {
 	return &Card{Description: description, Name: name, Number: number, Date: date, CVV: cvv}
 }
 
+// GetType getter for Card type.
 func (c Card) GetType() DataType {
 	return CARD_TYPE
 }
 
+// GetJSON getter for Card binary data.
 func (c Card) GetJSON() ([]byte, error) {
 	data, err := json.Marshal(c)
 	if err != nil {

@@ -7,18 +7,22 @@ import (
 	pb "github.com/vstebletsov89/go-developer-course-gophkeeper/internal/proto"
 )
 
+// SecretClient represents a structure for core gophkeeper service.
 type SecretClient struct {
 	service pb.GophkeeperClient
 }
 
+// NewSecretClient returns an instance of SecretClient.
 func NewSecretClient() *SecretClient {
 	return &SecretClient{}
 }
 
+// SetService sets protobuf gophkeeper client.
 func (c *SecretClient) SetService(service pb.GophkeeperClient) {
 	c.service = service
 }
 
+// AddData is a wrapper for AddData request.
 func (c *SecretClient) AddData(ctx context.Context, data models.Data) error {
 	request := &pb.AddDataRequest{
 		Data: &pb.Data{
@@ -37,6 +41,7 @@ func (c *SecretClient) AddData(ctx context.Context, data models.Data) error {
 	return nil
 }
 
+// GetData is a wrapper for GetData request.
 func (c *SecretClient) GetData(ctx context.Context) ([]models.Data, error) {
 	request := &pb.GetDataRequest{}
 
@@ -62,6 +67,7 @@ func (c *SecretClient) GetData(ctx context.Context) ([]models.Data, error) {
 	return convertedData, err
 }
 
+// DeleteData is a wrapper for DeleteData request.
 func (c *SecretClient) DeleteData(ctx context.Context, dataID string) error {
 	request := &pb.DeleteDataRequest{DataId: dataID}
 

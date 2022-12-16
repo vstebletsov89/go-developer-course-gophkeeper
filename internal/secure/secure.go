@@ -1,3 +1,4 @@
+// Package secure provides functions for encryption/decryption.
 package secure
 
 import (
@@ -12,6 +13,7 @@ import (
 	"sync"
 )
 
+// cipherData represents helper structure for crypto/aes encryption/decryption.
 type cipherData struct {
 	key    []byte
 	nonce  []byte
@@ -42,6 +44,7 @@ func cipherInit() error {
 	return e
 }
 
+// Encrypt returns encrypted data.
 func Encrypt(data []byte) ([]byte, error) {
 	if err := cipherInit(); err != nil {
 		return nil, err
@@ -56,6 +59,7 @@ func Encrypt(data []byte) ([]byte, error) {
 	return dst, nil
 }
 
+// Decrypt returns decrypted data.
 func Decrypt(data []byte) ([]byte, error) {
 	if err := cipherInit(); err != nil {
 		return nil, err
@@ -77,6 +81,7 @@ func Decrypt(data []byte) ([]byte, error) {
 	return decrypted, nil
 }
 
+// EncryptPrivateData encrypts user private data.
 func EncryptPrivateData(data *proto.Data, userID string) (models.Data, error) {
 	var securedData models.Data
 	encryptedBinary, err := Encrypt(data.GetDataBinary())
@@ -92,6 +97,7 @@ func EncryptPrivateData(data *proto.Data, userID string) (models.Data, error) {
 	return securedData, nil
 }
 
+// DecryptPrivateData decrypts user private data.
 func DecryptPrivateData(data models.Data) (*proto.Data, error) {
 	var securedData proto.Data
 	decryptedBinary, err := Decrypt(data.DataBinary)

@@ -6,7 +6,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const PostgreSQLTables = `
+const postgreSQLTables = `
 CREATE TABLE IF NOT EXISTS users (
     id       uuid NOT NULL PRIMARY KEY,
     login    text NOT NULL UNIQUE,
@@ -22,9 +22,10 @@ CREATE TABLE IF NOT EXISTS data (
 );
 `
 
+// MigrateTables migrates all required tables for gophkeeper service.
 func MigrateTables(pool *pgxpool.Pool) error {
 	log.Debug().Msg("Migration started..")
-	_, err := pool.Exec(context.Background(), PostgreSQLTables)
+	_, err := pool.Exec(context.Background(), postgreSQLTables)
 	if err != nil {
 		return err
 	}
@@ -32,6 +33,7 @@ func MigrateTables(pool *pgxpool.Pool) error {
 	return nil
 }
 
+// ConnectDB connects to postgres database.
 func ConnectDB(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	log.Debug().Msg("Connect to DB...")
 	pool, err := pgxpool.New(ctx, databaseURL)

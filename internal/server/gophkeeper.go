@@ -1,8 +1,13 @@
-// Package server contains grpc servers and interceptors.
+// Package server contains implementation of grpc server and interceptors.
 package server
 
 import (
 	"context"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/secure"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service"
@@ -12,10 +17,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
-	"net"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"google.golang.org/grpc"
 
@@ -25,15 +26,18 @@ import (
 	pb "github.com/vstebletsov89/go-developer-course-gophkeeper/internal/proto"
 )
 
+// GophkeeperServer represents a structure for gophkeeper service.
 type GophkeeperServer struct {
 	pb.UnimplementedGophkeeperServer
 	service service.Service
 }
 
+// NewGophkeeperServer returns an instance of GophkeeperServer.
 func NewGophkeeperServer(service service.Service) *GophkeeperServer {
 	return &GophkeeperServer{service: service}
 }
 
+// AddData adds encrypted private data to the storage.
 func (g *GophkeeperServer) AddData(ctx context.Context, request *pb.AddDataRequest) (*pb.AddDataResponse, error) {
 	userID := auth.ExtractUserIDFromContext(ctx)
 
@@ -52,6 +56,7 @@ func (g *GophkeeperServer) AddData(ctx context.Context, request *pb.AddDataReque
 	return &response, nil
 }
 
+// GetData gets all related data for current user.
 func (g *GophkeeperServer) GetData(ctx context.Context, request *pb.GetDataRequest) (*pb.GetDataResponse, error) {
 	userID := auth.ExtractUserIDFromContext(ctx)
 	var response pb.GetDataResponse
@@ -73,6 +78,7 @@ func (g *GophkeeperServer) GetData(ctx context.Context, request *pb.GetDataReque
 	return &response, nil
 }
 
+// DeleteData deletes private data from the storage.
 func (g *GophkeeperServer) DeleteData(ctx context.Context, request *pb.DeleteDataRequest) (*pb.DeleteDataResponse, error) {
 	var response pb.DeleteDataResponse
 
@@ -85,6 +91,7 @@ func (g *GophkeeperServer) DeleteData(ctx context.Context, request *pb.DeleteDat
 	return &response, nil
 }
 
+// RunServer starts server application for gophkeeper service.
 func RunServer(cfg *config.Config) error {
 	// init global logger
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix

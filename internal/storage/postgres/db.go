@@ -1,3 +1,4 @@
+// Package postgres contains business logic to work with postgres database.
 package postgres
 
 import (
@@ -25,6 +26,7 @@ func NewDBStorage(pool *pgxpool.Pool) *DBStorage {
 	return &DBStorage{db: pool}
 }
 
+// RegisterUser adds a new unique user to the storage.
 func (d *DBStorage) RegisterUser(ctx context.Context, user models.User) error {
 	err := d.db.QueryRow(ctx,
 		`INSERT INTO users (id, login, password)
@@ -49,6 +51,7 @@ func (d *DBStorage) RegisterUser(ctx context.Context, user models.User) error {
 	return nil
 }
 
+// GetUserByLogin gets current user data from storage.
 func (d *DBStorage) GetUserByLogin(ctx context.Context, login string) (models.User, error) {
 	var users []models.User
 	err := pgxscan.Select(ctx, d.db, &users, "SELECT id, login, password FROM users WHERE login=$1",
@@ -67,6 +70,7 @@ func (d *DBStorage) GetUserByLogin(ctx context.Context, login string) (models.Us
 	return users[0], nil
 }
 
+// AddData adds private data to storage.
 func (d *DBStorage) AddData(ctx context.Context, data models.Data) error {
 	_, err := d.db.Exec(ctx,
 		`INSERT INTO data (id, user_id, data_type, data_binary) 
@@ -88,6 +92,7 @@ func (d *DBStorage) AddData(ctx context.Context, data models.Data) error {
 	return nil
 }
 
+// GetDataByUserID gets all related user data from storage.
 func (d *DBStorage) GetDataByUserID(ctx context.Context, userID string) ([]models.Data, error) {
 	var data []models.Data
 	err := pgxscan.Select(ctx, d.db, &data,
@@ -107,6 +112,7 @@ func (d *DBStorage) GetDataByUserID(ctx context.Context, userID string) ([]model
 	return data, nil
 }
 
+// DeleteDataByDataID deletes private data from storage.
 func (d *DBStorage) DeleteDataByDataID(ctx context.Context, id string) error {
 	_, err := d.db.Exec(ctx,
 		`DELETE from data WHERE id = $1`,
@@ -120,6 +126,7 @@ func (d *DBStorage) DeleteDataByDataID(ctx context.Context, id string) error {
 	return nil
 }
 
+// ReleaseStorage closes database connection.
 func (d *DBStorage) ReleaseStorage() {
 	d.db.Close()
 	log.Info().Msg("Storage released")

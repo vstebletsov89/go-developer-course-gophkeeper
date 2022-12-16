@@ -1,3 +1,4 @@
+// Package client contains grpc client and interceptors.
 package client
 
 import (
@@ -10,6 +11,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// RunClient starts client application to communicate with the user.
 func RunClient(cfg *config.Config) error {
 	// init global logger
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix

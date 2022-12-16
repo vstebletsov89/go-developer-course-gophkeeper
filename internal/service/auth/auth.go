@@ -13,23 +13,29 @@ import (
 )
 
 const (
+	// AccessToken defines jwt token for current user.
 	AccessToken = "tokenInfo"
-	UserCtx     = "UserCtx"
+	// UserCtx defines user context name.
+	UserCtx = "UserCtx"
 )
 
+// JWTManager represents a structure for jwt manager.
 type JWTManager struct {
 	secretKey string
 }
 
+// UserClaims custom claims for jwt.
 type UserClaims struct {
 	jwt.RegisteredClaims
 }
 
+// JWT interface is the interface that must be implemented by JWTManager.
 type JWT interface {
 	GenerateToken(user string) (string, error)
 	ValidateToken(token string) error
 }
 
+// NewJWTManager return an instance of JWTManager.
 func NewJWTManager(secretKey string) *JWTManager {
 	return &JWTManager{secretKey: secretKey}
 }
@@ -37,6 +43,7 @@ func NewJWTManager(secretKey string) *JWTManager {
 // check that JWTManager implements all required methods.
 var _ JWT = (*JWTManager)(nil)
 
+// GenerateToken generates jwt token.
 func (j *JWTManager) GenerateToken(user string) (string, error) {
 	claims := UserClaims{RegisteredClaims: jwt.RegisteredClaims{
 		Issuer:    "Gophkeeper",
@@ -58,6 +65,7 @@ func (j *JWTManager) GenerateToken(user string) (string, error) {
 	return genToken, nil
 }
 
+// ValidateToken verifies that jwt token is valid.
 func (j *JWTManager) ValidateToken(accessToken string) error {
 	token, err := jwt.ParseWithClaims(
 		accessToken,
@@ -85,6 +93,7 @@ func (j *JWTManager) ValidateToken(accessToken string) error {
 	return nil
 }
 
+// EncryptPassword is used for encryption user password.
 func EncryptPassword(pwd string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
 	if err != nil {
@@ -93,6 +102,7 @@ func EncryptPassword(pwd string) (string, error) {
 	return string(hash), nil
 }
 
+// IsUserAuthorized is used to compare current user with registered user in storage.
 func IsUserAuthorized(user *models.User, userDB *models.User) (bool, error) {
 	if user.Login != userDB.Login {
 		return false, nil
@@ -108,6 +118,7 @@ func IsUserAuthorized(user *models.User, userDB *models.User) (bool, error) {
 	return true, nil
 }
 
+// ExtractUserIDFromContext extracts userID from context metadata.
 func ExtractUserIDFromContext(ctx context.Context) string {
 	// try to get userID from metadata
 	md, ok := metadata.FromIncomingContext(ctx)

@@ -7,10 +7,19 @@ import (
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
 )
 
+// ErrorUnauthorized defines an error for unauthorized user.
 var ErrorUnauthorized = errors.New("user is unauthorized")
+
+// ErrorUserAlreadyExist defines an error for duplicate user.
 var ErrorUserAlreadyExist = errors.New("user already exists")
+
+// ErrorUserNotFound defines an error for unknown user.
 var ErrorUserNotFound = errors.New("user not found")
+
+// ErrorPrivateDataNotFound defines an error for unknown private data.
 var ErrorPrivateDataNotFound = errors.New("private data not found")
+
+// ErrorInvalidDataType defines an error for invalid private data.
 var ErrorInvalidDataType = errors.New("private data has invalid type")
 
 // Storage is the interface that must be implemented by specific storage.
