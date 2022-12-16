@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/config"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
@@ -11,19 +12,15 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
-	"log"
 	"testing"
 )
 
-func startGrpcServer() {
+func startGrpcServer(t *testing.T) {
 	cfg, err := config.ReadConfig()
-	if err != nil {
-		log.Fatalf("Failed to read server configuration. Error: %v", err.Error())
-	}
+	assert.NoError(t, err)
 
-	if err := RunServer(cfg); err != nil {
-		log.Fatalf("Failed to read server configuration. Error: %v", err.Error())
-	}
+	err = RunServer(cfg)
+	assert.NoError(t, err)
 }
 
 func TestGophkeeperServer_Positive_Negative(t *testing.T) {
@@ -36,9 +33,6 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 
 	// connect to db only for migrations
 	db, err := testhelpers.ConnectDB(context.Background(), dsn)
-	if err != nil {
-		log.Fatalf("ConnectDB error: %s", err)
-	}
 	assert.NoError(t, err)
 
 	// do migration
@@ -49,7 +43,7 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	db.Close()
 
 	// start grpc server
-	go startGrpcServer()
+	go startGrpcServer(t)
 
 	// start client
 	conn, err := grpc.Dial("localhost:3201", grpc.WithTransportCredentials(insecure.NewCredentials()))
