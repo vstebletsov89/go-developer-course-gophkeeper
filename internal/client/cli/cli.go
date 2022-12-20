@@ -37,7 +37,7 @@ func (c *CLI) Completer(d prompt.Document) []prompt.Suggest {
 		{Text: "delete-data", Description: "Delete private data. Example: delete-data <data_id>"},
 		{Text: "exit", Description: "Exit from gophkeeper application. Example: exit"},
 	}
-	return prompt.FilterHasPrefix(s, d.GetWordBeforeCursor(), true)
+	return prompt.FilterContains(s, d.CurrentLine(), true)
 }
 
 // Register add new user for gophkeeper application.

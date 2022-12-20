@@ -33,7 +33,8 @@ func RunClient(cfg *config.Config) error {
 	p := prompt.New(
 		app.Executor,
 		app.Completer,
-		prompt.OptionMaxSuggestion(2),
+		prompt.OptionMaxSuggestion(1),
+		prompt.OptionCompletionOnDown(),
 	)
 	p.Run()
 
