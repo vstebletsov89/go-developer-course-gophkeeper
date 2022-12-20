@@ -72,6 +72,7 @@ func (d *DBStorage) GetUserByLogin(ctx context.Context, login string) (models.Us
 
 // AddData adds private data to storage.
 func (d *DBStorage) AddData(ctx context.Context, data models.Data) error {
+	log.Debug().Msgf("AddData (postgres): %v", data)
 	_, err := d.db.Exec(ctx,
 		`INSERT INTO data (id, user_id, data_type, data_binary) 
 			 VALUES ($1, $2, $3, $4) ON CONFLICT(id) 

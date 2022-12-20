@@ -1,4 +1,4 @@
-package client
+package service
 
 import (
 	"context"
@@ -32,10 +32,11 @@ func (c *SecretClient) AddData(ctx context.Context, data models.Data) error {
 		},
 	}
 
-	_, err := c.service.AddData(ctx, request)
+	resp, err := c.service.AddData(ctx, request)
 	if err != nil {
 		return err
 	}
+	log.Debug().Msgf("Client (AddData) response: %v", resp)
 
 	log.Debug().Msg("Client (AddData): done")
 	return nil

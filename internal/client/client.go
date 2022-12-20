@@ -2,8 +2,11 @@
 package client
 
 import (
+	"github.com/c-bata/go-prompt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/client/cli"
+	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/client/service"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/config"
 	pb "github.com/vstebletsov89/go-developer-course-gophkeeper/internal/proto"
 	"google.golang.org/grpc"
@@ -22,23 +25,25 @@ func RunClient(cfg *config.Config) error {
 	// debug config
 	log.Debug().Msgf("%+v\n\n", cfg)
 
-	// TODO: implement cli
+	app, err := startClient(cfg)
+	if err != nil {
+		return err
+	}
 
-	//ctx, cancel := context.WithCancel(context.Background())
-	//defer cancel()
-
-	//authClient, secretClient, err := startClient(cfg)
-	//if err != nil {
-	//	return err
-	//}
+	p := prompt.New(
+		app.Executor,
+		app.Completer,
+		prompt.OptionMaxSuggestion(2),
+	)
+	p.Run()
 
 	return nil
 }
 
-func startClient(cfg *config.Config) (*AuthClient, *SecretClient, error) {
+func startClient(cfg *config.Config) (*cli.CLI, error) {
 	var clientConn *grpc.ClientConn
-	authClient := NewAuthClient()
-	secretClient := NewSecretClient()
+	authClient := service.NewAuthClient()
+	secretClient := service.NewSecretClient()
 
 	// start GRPC client with/without TLS
 	var err error
@@ -48,14 +53,14 @@ func startClient(cfg *config.Config) (*AuthClient, *SecretClient, error) {
 		transportCredentials, err := credentials.NewClientTLSFromFile("cert.pem", "")
 		if err != nil {
 			log.Error().Msgf("GRPC client credentials.NewClientTLSFromFile: %v", err.Error())
-			return nil, nil, err
+			return nil, err
 		}
 
 		clientConn, err = grpc.Dial(cfg.ServerAddress, grpc.WithTransportCredentials(transportCredentials),
 			grpc.WithUnaryInterceptor(authClient.UnaryInterceptorClient))
 		if err != nil {
 			log.Error().Msgf("GRPC client Dial: %v", err.Error())
-			return nil, nil, err
+			return nil, err
 		}
 	} else {
 		// client without TLS credentials
@@ -64,11 +69,13 @@ func startClient(cfg *config.Config) (*AuthClient, *SecretClient, error) {
 			grpc.WithUnaryInterceptor(authClient.UnaryInterceptorClient))
 		if err != nil {
 			log.Error().Msgf("GRPC client Dial: %v", err.Error())
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
 	authClient.SetService(pb.NewAuthClient(clientConn))
 	secretClient.SetService(pb.NewGophkeeperClient(clientConn))
-	return authClient, secretClient, nil
+
+	app := cli.NewCLI(authClient, secretClient)
+	return app, nil
 }

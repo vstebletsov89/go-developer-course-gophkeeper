@@ -2,13 +2,13 @@ package client
 
 import (
 	"context"
+	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/client/cli"
+	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/config"
-	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/server"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/storage/postgres/testhelpers"
 )
@@ -21,17 +21,17 @@ func startGrpcServer(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func startGrpcClient() (*AuthClient, *SecretClient, error) {
+func startGrpcClient() (*cli.CLI, error) {
 	cfg, err := config.ReadConfig()
 	if err != nil {
 		panic(err)
 	}
 
-	authClient, secretClient, err := startClient(cfg)
+	client, err := startClient(cfg)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return authClient, secretClient, nil
+	return client, nil
 }
 
 func TestGophkeeperClient_Positive_Negative(t *testing.T) {
@@ -57,97 +57,77 @@ func TestGophkeeperClient_Positive_Negative(t *testing.T) {
 	go startGrpcServer(t)
 
 	// start client
-	authClient, secretClient, err := startGrpcClient()
+	client, err := startGrpcClient()
 	assert.NoError(t, err)
 
 	ctx := context.Background()
-	user := models.User{
-		ID:       "",
-		Login:    "clientUser",
-		Password: "password",
-	}
-	authClient.SetUser(user)
 
 	// test Register user
-	err = authClient.Register(ctx)
+	args := make([]string, 2)
+	args[0] = "user"
+	args[1] = "password"
+	err = client.Register(ctx, args)
 	assert.NoError(t, err)
 
 	// test Login user
-	token, err := authClient.Login(ctx)
+	err = client.Login(ctx, args)
 	assert.NoError(t, err)
 
-	// set jwt token
-	authClient.SetAccessToken(token)
-
-	secretCredentials := models.NewCredentials("credentials description", "login", "password")
-	binaryCredentials, err := secretCredentials.GetJSON()
-	assert.NoError(t, err)
-	dataCredentials := models.Data{
-		ID:         uuid.NewString(),
-		UserID:     "",
-		DataType:   secretCredentials.GetType(),
-		DataBinary: binaryCredentials,
-	}
-	err = secretClient.AddData(ctx, dataCredentials)
+	// add different data types
+	args[0] = "binary description"
+	args[1] = "some binary value"
+	err = client.AddBinary(ctx, args)
 	assert.NoError(t, err)
 
-	secretText := models.NewText("text description", "some text")
-	binaryText, err := secretText.GetJSON()
-	assert.NoError(t, err)
-	dataText := models.Data{
-		ID:         uuid.NewString(),
-		UserID:     "",
-		DataType:   secretText.GetType(),
-		DataBinary: binaryText,
-	}
-	err = secretClient.AddData(ctx, dataText)
+	args[0] = "text description"
+	args[1] = "some text"
+	err = client.AddText(ctx, args)
 	assert.NoError(t, err)
 
-	secretCard := models.NewCard("card description", "ivanov ivan", "5555 5555 5555 5555", "01/24", "000")
-	binaryCard, err := secretCard.GetJSON()
-	assert.NoError(t, err)
-	dataCard := models.Data{
-		ID:         uuid.NewString(),
-		UserID:     "",
-		DataType:   secretCard.GetType(),
-		DataBinary: binaryCard,
-	}
-	err = secretClient.AddData(ctx, dataCard)
+	args = make([]string, 3)
+	args[0] = "credentials description"
+	args[1] = "login"
+	args[2] = "password"
+	err = client.AddCredentials(ctx, args)
 	assert.NoError(t, err)
 
-	secretBinary := models.NewBinary("binary description", []byte("some binary value"))
-	binaryBinary, err := secretBinary.GetJSON()
-	assert.NoError(t, err)
-	dataBinary := models.Data{
-		ID:         uuid.NewString(),
-		UserID:     "",
-		DataType:   secretBinary.GetType(),
-		DataBinary: binaryBinary,
-	}
-	err = secretClient.AddData(ctx, dataBinary)
+	args = make([]string, 5)
+	args[0] = "card description"
+	args[1] = "ivanov ivan"
+	args[2] = "5555 5555 5555 5555"
+	args[3] = "01/24"
+	args[4] = "000"
+	err = client.AddCard(ctx, args)
 	assert.NoError(t, err)
 
-	data, err := secretClient.GetData(ctx)
+	// get all data
+	data, err := client.GetData(ctx)
+	assert.NoError(t, err)
+
 	for _, secret := range data {
-		log.Printf("secret from storage %v", secret)
 		switch secret.DataType {
 		case models.CREDENTIALS_TYPE:
-			assert.Equal(t, binaryCredentials, secret.DataBinary)
+			log.Info().Msgf("ID: %s type: CREDENTIALS data: %s",
+				secret.ID, string(secret.DataBinary))
 			break
 		case models.TEXT_TYPE:
-			assert.Equal(t, binaryText, secret.DataBinary)
+			log.Info().Msgf("ID: %s type: TEXT data: %s",
+				secret.ID, string(secret.DataBinary))
 			break
 		case models.BINARY_TYPE:
-			assert.Equal(t, binaryBinary, secret.DataBinary)
+			log.Info().Msgf("ID: %s type: BINARY data: %s",
+				secret.ID, string(secret.DataBinary))
 			break
 		case models.CARD_TYPE:
-			assert.Equal(t, binaryCard, secret.DataBinary)
+			log.Info().Msgf("ID: %s type: CARD data: %s",
+				secret.ID, string(secret.DataBinary))
 			break
-		default:
-			assert.Equal(t, "correct_type", "invalid_type_from_server")
 		}
 	}
 
-	err = secretClient.DeleteData(ctx, data[0].ID)
+	// delete data
+	args = make([]string, 1)
+	args[0] = data[0].ID
+	err = client.DeleteData(ctx, args)
 	assert.NoError(t, err)
 }

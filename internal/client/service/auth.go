@@ -1,4 +1,5 @@
-package client
+// Package service contains service layer for grpc clients.
+package service
 
 import (
 	"context"
@@ -89,6 +90,7 @@ func (a *AuthClient) Register(ctx context.Context) error {
 func (a *AuthClient) UnaryInterceptorClient(ctx context.Context, method string, req interface{}, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 	md := metadata.New(map[string]string{auth.AccessToken: a.AccessToken(),
 		auth.UserCtx: a.User().ID})
+	log.Debug().Msgf("UnaryInterceptorClient metadata: %v", md)
 	ctx = metadata.NewOutgoingContext(context.Background(), md)
 	return invoker(ctx, method, req, reply, cc, opts...)
 }
