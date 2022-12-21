@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+	"os"
 	"testing"
 )
 
@@ -24,6 +25,12 @@ func startGrpcServer(t *testing.T) {
 }
 
 func TestGophkeeperServer_Positive_Negative(t *testing.T) {
+	// skip testcontainers for github actions
+	log.Debug().Msgf("ENV: %v", os.Getenv("CI"))
+	if os.Getenv("CI") == "true" {
+		return
+	}
+
 	// run docker with postgres
 	storageContainer := testhelpers.NewTestDatabase(t)
 	dsn := storageContainer.ConnectionString(t)

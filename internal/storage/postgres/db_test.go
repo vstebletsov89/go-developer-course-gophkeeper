@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -63,6 +64,11 @@ func (sts *StorageTestSuite) TearDownTest() {
 }
 
 func TestStorageTestSuite(t *testing.T) {
+	// skip testcontainers for github actions
+	log.Debug().Msgf("ENV: %v", os.Getenv("CI"))
+	if os.Getenv("CI") == "true" {
+		return
+	}
 	suite.Run(t, new(StorageTestSuite))
 }
 
