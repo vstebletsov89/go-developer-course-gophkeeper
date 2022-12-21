@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/client/cli"
-	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
 	"testing"
 
 	"github.com/rs/zerolog/log"
@@ -104,26 +103,7 @@ func TestGophkeeperClient_Positive_Negative(t *testing.T) {
 	data, err := client.GetData(ctx)
 	assert.NoError(t, err)
 
-	for _, secret := range data {
-		switch secret.DataType {
-		case models.CREDENTIALS_TYPE:
-			log.Info().Msgf("ID: %s type: CREDENTIALS data: %s",
-				secret.ID, string(secret.DataBinary))
-			break
-		case models.TEXT_TYPE:
-			log.Info().Msgf("ID: %s type: TEXT data: %s",
-				secret.ID, string(secret.DataBinary))
-			break
-		case models.BINARY_TYPE:
-			log.Info().Msgf("ID: %s type: BINARY data: %s",
-				secret.ID, string(secret.DataBinary))
-			break
-		case models.CARD_TYPE:
-			log.Info().Msgf("ID: %s type: CARD data: %s",
-				secret.ID, string(secret.DataBinary))
-			break
-		}
-	}
+	client.LogData(data)
 
 	// delete data
 	args = make([]string, 1)

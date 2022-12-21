@@ -245,23 +245,7 @@ func (c *CLI) Executor(input string) {
 			log.Error().Msgf("Failed to get data: %v", err)
 			return
 		}
-		log.Info().Msg("Private data for current user:")
-		for _, secret := range data {
-			switch secret.DataType {
-			case models.CREDENTIALS_TYPE:
-				log.Info().Msgf("ID: %s type: CREDENTIALS data: %s",
-					secret.ID, string(secret.DataBinary))
-			case models.TEXT_TYPE:
-				log.Info().Msgf("ID: %s type: TEXT data: %s",
-					secret.ID, string(secret.DataBinary))
-			case models.BINARY_TYPE:
-				log.Info().Msgf("ID: %s type: BINARY data: %s",
-					secret.ID, string(secret.DataBinary))
-			case models.CARD_TYPE:
-				log.Info().Msgf("ID: %s type: CARD data: %s",
-					secret.ID, string(secret.DataBinary))
-			}
-		}
+		c.LogData(data)
 		log.Info().Msg("All user data was received.")
 	case "delete-data":
 		err := c.DeleteData(ctx, args[1:])
@@ -275,5 +259,26 @@ func (c *CLI) Executor(input string) {
 		os.Exit(0)
 	default:
 		log.Info().Msg("Invalid option.")
+	}
+}
+
+// LogData prints formatted private data.
+func (c *CLI) LogData(data []models.Data) {
+	log.Info().Msg("Private data for current user:")
+	for _, secret := range data {
+		switch secret.DataType {
+		case models.CREDENTIALS_TYPE:
+			log.Info().Msgf("ID: %s type: CREDENTIALS data: %s",
+				secret.ID, string(secret.DataBinary))
+		case models.TEXT_TYPE:
+			log.Info().Msgf("ID: %s type: TEXT data: %s",
+				secret.ID, string(secret.DataBinary))
+		case models.BINARY_TYPE:
+			log.Info().Msgf("ID: %s type: BINARY data: %s",
+				secret.ID, string(secret.DataBinary))
+		case models.CARD_TYPE:
+			log.Info().Msgf("ID: %s type: CARD data: %s",
+				secret.ID, string(secret.DataBinary))
+		}
 	}
 }
