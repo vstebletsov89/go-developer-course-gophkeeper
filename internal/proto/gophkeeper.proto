@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package gophkeeper;
+
+option go_package = "gophkeeper/internal/proto";
+
+enum DataType {
+  CREDENTIALS_TYPE = 0;
+  TEXT_TYPE = 1;
+  BINARY_TYPE = 2;
+  CARD_TYPE = 3;
+}
+
+message Data {
+  string data_id = 1;
+  DataType data_type = 2;
+  bytes  data_binary = 3;
+}
+
+message AddDataRequest {
+  Data data = 1;
+}
+
+message AddDataResponse {
+  // empty response
+}
+
+message GetDataRequest {
+  // empty request
+}
+
+message GetDataResponse {
+  repeated Data data = 1;
+}
+
+message DeleteDataRequest {
+  string data_id = 1;
+}
+
+message DeleteDataResponse {
+  // empty response
+}
+
+service Gophkeeper {
+  rpc AddData(AddDataRequest) returns(AddDataResponse);
+  rpc GetData(GetDataRequest) returns(GetDataResponse);
+  rpc DeleteData(DeleteDataRequest) returns(DeleteDataResponse);
+}
