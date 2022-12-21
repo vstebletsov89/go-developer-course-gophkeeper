@@ -58,6 +58,8 @@ func (g *GophkeeperServer) AddData(ctx context.Context, request *pb.AddDataReque
 
 // GetData gets all related data for current user.
 func (g *GophkeeperServer) GetData(ctx context.Context, request *pb.GetDataRequest) (*pb.GetDataResponse, error) {
+	log.Debug().Msgf("Server (GetData) request: %v", request)
+
 	userID := auth.ExtractUserIDFromContext(ctx)
 	var response pb.GetDataResponse
 
@@ -106,7 +108,7 @@ func RunServer(cfg *config.Config) error {
 	defer cancel()
 
 	// error group to control server instances
-	g, ctx := errgroup.WithContext(ctx)
+	g, _ := errgroup.WithContext(ctx)
 
 	db, err := connectDB(context.Background(), cfg.DatabaseDsn)
 	if err != nil {

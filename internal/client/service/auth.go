@@ -91,6 +91,6 @@ func (a *AuthClient) UnaryInterceptorClient(ctx context.Context, method string, 
 	md := metadata.New(map[string]string{auth.AccessToken: a.AccessToken(),
 		auth.UserCtx: a.User().ID})
 	log.Debug().Msgf("UnaryInterceptorClient metadata: %v", md)
-	ctx = metadata.NewOutgoingContext(context.Background(), md)
-	return invoker(ctx, method, req, reply, cc, opts...)
+	newCtx := metadata.NewOutgoingContext(ctx, md)
+	return invoker(newCtx, method, req, reply, cc, opts...)
 }

@@ -63,7 +63,7 @@ func (a *AuthServer) Login(ctx context.Context, request *pb.LoginRequest) (*pb.L
 	}
 
 	ok, err := auth.IsUserAuthorized(&user, &userDB)
-	if !ok {
+	if err != nil || !ok {
 		return nil, status.Errorf(codes.Unauthenticated, "incorrect username/password")
 	}
 

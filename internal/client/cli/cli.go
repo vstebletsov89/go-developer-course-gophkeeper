@@ -189,6 +189,8 @@ func (c *CLI) AddCard(ctx context.Context, args []string) error {
 }
 
 // Executor runs actions for option items.
+//
+//nolint:funlen
 func (c *CLI) Executor(input string) {
 	log.Debug().Msgf("Option selected: " + input)
 	args := strings.Split(input, " ")
