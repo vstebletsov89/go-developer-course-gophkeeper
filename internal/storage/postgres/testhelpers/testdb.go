@@ -24,7 +24,7 @@ type TestDatabase struct {
 
 // NewTestDatabase returns an instance of TestDatabase.
 func NewTestDatabase(t *testing.T) *TestDatabase {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:14",
