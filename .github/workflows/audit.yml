@@ -40,9 +40,3 @@ jobs:
 
       - name: Run golint
         run: golint ./...
-
-      - name: Run tests
-        run: go test --coverprofile=coverage ./...
-
-      - name: Run tests coverage
-        run: go tool cover -func=coverage
