@@ -269,16 +269,16 @@ func (c *CLI) LogData(data []models.Data) {
 	log.Info().Msg("Private data for current user:")
 	for _, secret := range data {
 		switch secret.DataType {
-		case models.CREDENTIALS_TYPE:
+		case models.CredentialsType:
 			log.Info().Msgf("ID: %s type: CREDENTIALS data: %s",
 				secret.ID, string(secret.DataBinary))
-		case models.TEXT_TYPE:
+		case models.TextType:
 			log.Info().Msgf("ID: %s type: TEXT data: %s",
 				secret.ID, string(secret.DataBinary))
-		case models.BINARY_TYPE:
+		case models.BinaryType:
 			log.Info().Msgf("ID: %s type: BINARY data: %s",
 				secret.ID, string(secret.DataBinary))
-		case models.CARD_TYPE:
+		case models.CardType:
 			log.Info().Msgf("ID: %s type: CARD data: %s",
 				secret.ID, string(secret.DataBinary))
 		}
