@@ -58,7 +58,7 @@ func (db *TestDatabase) Port(t *testing.T) int {
 
 // ConnectionString returns a connection string for postgres database.
 func (db *TestDatabase) ConnectionString(t *testing.T) string {
-	return fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:%d/postgres", db.Port(t))
+	return fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:%d/postgres?sslmode=disable", db.Port(t))
 }
 
 // Close closes database connection in current docker container.

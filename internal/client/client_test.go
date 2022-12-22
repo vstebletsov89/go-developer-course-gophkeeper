@@ -45,17 +45,7 @@ func TestGophkeeperClient_Positive_Negative(t *testing.T) {
 	log.Printf("DATABASE_DSN: %v", dsn)
 	t.Setenv("DATABASE_DSN", dsn)
 	t.Setenv("SERVER_ADDRESS", "localhost:3202")
-
-	// connect to db only for migrations
-	db, err := testhelpers.ConnectDB(context.Background(), dsn)
-	assert.NoError(t, err)
-
-	// do migration
-	err = testhelpers.MigrateTables(db)
-	assert.NoError(t, err)
-
-	// close connection (it will be opened during start of server)
-	db.Close()
+	t.Setenv("ENABLE_MIGRATION", "true")
 
 	// start grpc server
 	go startGrpcServer(t)

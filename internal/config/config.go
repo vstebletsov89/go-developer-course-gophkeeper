@@ -11,11 +11,12 @@ import (
 
 // Config contains global settings of service.
 type Config struct {
-	ServerAddress string `env:"SERVER_ADDRESS" envDefault:"localhost:8080" json:"serverAddress"`
-	DatabaseDsn   string `env:"DATABASE_DSN" envDefault:"user=postgres dbname=postgres password=postgres host=localhost sslmode=disable" json:"databaseDsn"` //nolint:lll
-	JwtSecretKey  string `env:"JWT_SECRET" envDefault:"secret_key" json:"jwtSecretKey"`
-	EnableTLS     bool   `env:"ENABLE_TLS" envDefault:"false" json:"enableTLS"`
-	LogLevel      string `env:"LOG_LEVEL" envDefault:"debug"`
+	ServerAddress   string `env:"SERVER_ADDRESS" envDefault:"localhost:8080" json:"serverAddress"`
+	DatabaseDsn     string `env:"DATABASE_DSN" envDefault:"user=postgres dbname=postgres password=postgres host=localhost sslmode=disable" json:"databaseDsn"` //nolint:lll
+	JwtSecretKey    string `env:"JWT_SECRET" envDefault:"secret_key" json:"jwtSecretKey"`
+	EnableTLS       bool   `env:"ENABLE_TLS" envDefault:"false" json:"enableTLS"`
+	EnableMigration bool   `env:"ENABLE_MIGRATION" envDefault:"false" json:"enableMigration"`
+	LogLevel        string `env:"LOG_LEVEL" envDefault:"debug"`
 }
 
 var once sync.Once //nolint:gochecknoglobals
@@ -27,6 +28,7 @@ func (c *Config) readCommandLineArgs() {
 		flag.StringVar(&c.LogLevel, "l", c.LogLevel, "log level")
 		flag.StringVar(&c.JwtSecretKey, "j", c.JwtSecretKey, "jwt secret key")
 		flag.BoolVar(&c.EnableTLS, "s", c.EnableTLS, "enable secure mode")
+		flag.BoolVar(&c.EnableMigration, "m", c.EnableMigration, "enable database migration")
 		flag.Parse()
 	})
 }

@@ -3,6 +3,8 @@ package server
 
 import (
 	"context"
+	"database/sql"
+	_ "github.com/lib/pq"
 	"net"
 	"os"
 	"os/signal"
@@ -94,6 +96,8 @@ func (g *GophkeeperServer) DeleteData(ctx context.Context, request *pb.DeleteDat
 }
 
 // RunServer starts server application for gophkeeper service.
+//
+//nolint:funlen
 func RunServer(cfg *config.Config) error {
 	// init global logger
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
@@ -118,6 +122,27 @@ func RunServer(cfg *config.Config) error {
 
 	log.Info().Msg("Database connection: OK")
 	defer db.Close()
+
+	conn, err := connectDBForMigration(cfg.DatabaseDsn)
+	if err != nil {
+		return err
+	}
+	log.Info().Msg("Migration connection: OK")
+
+	defer func(conn *sql.DB) {
+		err := conn.Close()
+		if err != nil {
+			return
+		}
+	}(conn)
+
+	// run migrations
+	if cfg.EnableMigration {
+		err := postgres.RunMigrations(conn)
+		if err != nil {
+			return err
+		}
+	}
 
 	// create storage
 	storage := postgres.NewDBStorage(db)
@@ -202,4 +227,13 @@ func connectDB(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 		return nil, err
 	}
 	return pool, nil
+}
+
+func connectDBForMigration(databaseURL string) (*sql.DB, error) {
+	log.Debug().Msg("connectDBForMigration...")
+	db, err := sql.Open("postgres", databaseURL)
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
 }

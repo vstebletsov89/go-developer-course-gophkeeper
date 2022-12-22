@@ -48,7 +48,10 @@ func (sts *StorageTestSuite) SetupTest() {
 	require.NoError(sts.T(), err)
 
 	// migrations
-	err = testhelpers.MigrateTables(pool)
+	conn, err := testhelpers.ConnectDBForMigration(cfg.DatabaseDsn)
+	require.NoError(sts.T(), err)
+
+	err = RunMigrations(conn)
 	require.NoError(sts.T(), err)
 
 	db := NewDBStorage(pool)
