@@ -11,9 +11,12 @@ import (
 	"time"
 )
 
+// UserContextType user context type.
+type UserContextType string
+
 const (
 	// UserCtx defines user context name.
-	UserCtx = "UserCtx"
+	UserCtx UserContextType = "UserCtx"
 )
 
 // JWTManager represents a structure for jwt manager.
