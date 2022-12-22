@@ -3,13 +3,11 @@ package service
 
 import (
 	"context"
-	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service/auth"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
-
 	"github.com/rs/zerolog/log"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
 	pb "github.com/vstebletsov89/go-developer-course-gophkeeper/internal/proto"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 // AuthClient represents a structure for authorization service.
@@ -88,9 +86,7 @@ func (a *AuthClient) Register(ctx context.Context) error {
 
 // UnaryInterceptorClient is a client interceptor for attaching access token and current userID.
 func (a *AuthClient) UnaryInterceptorClient(ctx context.Context, method string, req interface{}, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-	md := metadata.New(map[string]string{auth.AccessToken: a.AccessToken(),
-		auth.UserCtx: a.User().ID})
-	log.Debug().Msgf("UnaryInterceptorClient metadata: %v", md)
-	newCtx := metadata.NewOutgoingContext(ctx, md)
+	newCtx := metadata.AppendToOutgoingContext(ctx, "authorization", "bearer "+a.AccessToken())
+	log.Debug().Msgf("UnaryInterceptorClient (attaching bearer with jwt token): %v", a.AccessToken())
 	return invoker(newCtx, method, req, reply, cc, opts...)
 }

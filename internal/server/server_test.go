@@ -7,12 +7,10 @@ import (
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/config"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
 	pb "github.com/vstebletsov89/go-developer-course-gophkeeper/internal/proto"
-	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service/auth"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/storage/postgres/testhelpers"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
-	"os"
 	"testing"
 )
 
@@ -25,9 +23,8 @@ func startGrpcServer(t *testing.T) {
 }
 
 func TestGophkeeperServer_Positive_Negative(t *testing.T) {
-	// skip testcontainers for github actions
-	log.Debug().Msgf("ENV: %v", os.Getenv("CI"))
-	if os.Getenv("CI") == "true" {
+	if testhelpers.IsGithubActions() {
+		// skip testcontainers for github actions
 		return
 	}
 
@@ -87,9 +84,7 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	assert.NotNil(t, loginResponse.GetToken().GetToken())
 
 	// add jwt token for authorization
-	md := metadata.New(map[string]string{auth.AccessToken: loginResponse.GetToken().GetToken(),
-		auth.UserCtx: loginResponse.GetToken().GetUserId()})
-	ctx = metadata.NewOutgoingContext(context.Background(), md)
+	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "bearer "+loginResponse.GetToken().GetToken())
 
 	// add text data
 	textSecret, err := models.NewText("text description", "text value").GetJSON()
@@ -144,16 +139,12 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 		switch secret.GetDataType() {
 		case pb.DataType_CREDENTIALS_TYPE:
 			assert.Equal(t, credentialsSecret, secret.GetDataBinary())
-			break
 		case pb.DataType_TEXT_TYPE:
 			assert.Equal(t, textSecret, secret.GetDataBinary())
-			break
 		case pb.DataType_BINARY_TYPE:
 			assert.Equal(t, binarySecret, secret.GetDataBinary())
-			break
 		case pb.DataType_CARD_TYPE:
 			assert.Equal(t, cardSecret, secret.GetDataBinary())
-			break
 		default:
 			assert.Equal(t, "correct_type", "invalid_type_from_server")
 		}
@@ -186,7 +177,7 @@ func TestGophkeeperServer_Positive_Negative(t *testing.T) {
 	log.Printf("err : %v", err.Error())
 
 	// reset metadata and context to get authorization error
-	md = metadata.New(map[string]string{"InvalidAccessToken": loginResponse.GetToken().GetToken()})
+	md := metadata.New(map[string]string{"InvalidAccessToken": loginResponse.GetToken().GetToken()})
 	ctx = metadata.NewOutgoingContext(context.Background(), md)
 	_, err = gophkeeperClient.GetData(ctx, &pb.GetDataRequest{})
 	assert.NotNil(t, err)

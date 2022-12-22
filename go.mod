@@ -8,6 +8,7 @@ require (
 	github.com/georgysavva/scany/v2 v2.0.0
 	github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/google/uuid v1.3.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/jackc/pgx/v5 v5.2.0
 	github.com/rs/zerolog v1.28.0
 	github.com/stretchr/testify v1.8.1

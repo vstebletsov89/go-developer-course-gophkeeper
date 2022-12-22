@@ -4,7 +4,14 @@ import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
+	"os"
 )
+
+func IsGithubActions() bool {
+	ci := os.Getenv("CI") == "true"
+	log.Debug().Msgf("GithubActions: %v", ci)
+	return ci
+}
 
 const postgreSQLTables = `
 CREATE TABLE IF NOT EXISTS users (
