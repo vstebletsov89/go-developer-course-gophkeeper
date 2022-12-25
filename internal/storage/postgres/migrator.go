@@ -28,3 +28,13 @@ func RunMigrations(db *sql.DB) error {
 	log.Info().Msg("Migration done")
 	return nil
 }
+
+// ConnectDBForMigration connects to postgres database.
+func ConnectDBForMigration(databaseURL string) (*sql.DB, error) {
+	log.Debug().Msg("connectDBForMigration...")
+	db, err := sql.Open("postgres", databaseURL)
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}

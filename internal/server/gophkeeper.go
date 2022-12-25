@@ -4,13 +4,12 @@ package server
 import (
 	"context"
 	"database/sql"
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // load postgres driver
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/secure"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service/auth"
@@ -114,7 +113,7 @@ func RunServer(cfg *config.Config) error {
 	// error group to control server instances
 	g, _ := errgroup.WithContext(ctx)
 
-	db, err := connectDB(context.Background(), cfg.DatabaseDsn)
+	db, err := postgres.ConnectDB(context.Background(), cfg.DatabaseDsn)
 	if err != nil {
 		log.Debug().Msgf("connectDB error: %s", err)
 		return err
@@ -123,7 +122,7 @@ func RunServer(cfg *config.Config) error {
 	log.Info().Msg("Database connection: OK")
 	defer db.Close()
 
-	conn, err := connectDBForMigration(cfg.DatabaseDsn)
+	conn, err := postgres.ConnectDBForMigration(cfg.DatabaseDsn)
 	if err != nil {
 		return err
 	}
@@ -217,23 +216,4 @@ func RunServer(cfg *config.Config) error {
 	}
 
 	return nil
-}
-
-func connectDB(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
-	log.Debug().Msg("Connect to DB...")
-	pool, err := pgxpool.New(ctx, databaseURL)
-	if err != nil {
-		log.Error().Msgf("Failed to connect to database. Error: %v", err.Error())
-		return nil, err
-	}
-	return pool, nil
-}
-
-func connectDBForMigration(databaseURL string) (*sql.DB, error) {
-	log.Debug().Msg("connectDBForMigration...")
-	db, err := sql.Open("postgres", databaseURL)
-	if err != nil {
-		return nil, err
-	}
-	return db, nil
 }

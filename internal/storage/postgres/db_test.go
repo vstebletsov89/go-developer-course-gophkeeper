@@ -44,11 +44,11 @@ func (sts *StorageTestSuite) SetupTest() {
 	cfg, err := config.ReadConfig()
 	require.NoError(sts.T(), err)
 
-	pool, err := testhelpers.ConnectDB(context.Background(), cfg.DatabaseDsn)
+	pool, err := ConnectDB(context.Background(), cfg.DatabaseDsn)
 	require.NoError(sts.T(), err)
 
 	// migrations
-	conn, err := testhelpers.ConnectDBForMigration(cfg.DatabaseDsn)
+	conn, err := ConnectDBForMigration(cfg.DatabaseDsn)
 	require.NoError(sts.T(), err)
 
 	err = RunMigrations(conn)
