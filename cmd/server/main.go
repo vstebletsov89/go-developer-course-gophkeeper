@@ -7,13 +7,16 @@ import (
 )
 
 var (
+	// BuildVersion is a build version of server application.
 	BuildVersion = "N/A"
-	BuildDate    = "N/A"
-	BuildCommit  = "N/A"
+	// BuildDate is a build date of server application.
+	BuildDate = "N/A"
+	// BuildCommit is a build commit of server application.
+	BuildCommit = "N/A"
 )
 
 func main() {
-	// print server build version
+	// print server build info
 	fmt.Printf("Build version: %s\n", BuildVersion)
 	fmt.Printf("Build date: %s\n", BuildDate)
 	fmt.Printf("Build commit: %s\n", BuildCommit)

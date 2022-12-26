@@ -24,7 +24,7 @@ type TestDatabase struct {
 
 // NewTestDatabase returns an instance of TestDatabase.
 func NewTestDatabase(t *testing.T) *TestDatabase {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:14",
@@ -58,7 +58,7 @@ func (db *TestDatabase) Port(t *testing.T) int {
 
 // ConnectionString returns a connection string for postgres database.
 func (db *TestDatabase) ConnectionString(t *testing.T) string {
-	return fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:%d/postgres", db.Port(t))
+	return fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:%d/postgres?sslmode=disable", db.Port(t))
 }
 
 // Close closes database connection in current docker container.

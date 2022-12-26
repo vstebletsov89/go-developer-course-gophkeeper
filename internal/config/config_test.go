@@ -16,11 +16,12 @@ func TestReadConfig(t *testing.T) {
 		{
 			name: "read config with defaults",
 			want: &Config{
-				ServerAddress: "localhost:8080",
-				DatabaseDsn:   "user=postgres dbname=postgres password=postgres host=localhost sslmode=disable",
-				JwtSecretKey:  "secret_key",
-				LogLevel:      "debug",
-				EnableTLS:     false,
+				ServerAddress:   "localhost:8080",
+				DatabaseDsn:     "user=postgres dbname=postgres password=postgres host=localhost sslmode=disable",
+				JwtSecretKey:    "secret_key",
+				LogLevel:        "debug",
+				EnableTLS:       false,
+				EnableMigration: false,
 			},
 		},
 	}

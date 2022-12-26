@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
-	"google.golang.org/grpc/metadata"
 	"reflect"
 	"testing"
 )
@@ -165,7 +164,7 @@ func TestJWTManager_ValidateToken(t *testing.T) {
 			token, err := J.GenerateToken(tt.user)
 			assert.NoError(t, err)
 
-			err = J.ValidateToken(token)
+			_, err = J.ValidateToken(token)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ValidateToken() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -221,12 +220,12 @@ func TestExtractUserIDFromContext(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
 			if !tt.wantErr {
-				md := metadata.New(map[string]string{UserCtx: tt.user})
-				ctx = metadata.NewIncomingContext(context.Background(), md)
+				assert.Equalf(t, tt.want, ExtractUserIDFromContext(context.WithValue(context.Background(), UserCtx, tt.user)), tt.want)
+			} else {
+				assert.Equalf(t, tt.want, ExtractUserIDFromContext(context.Background()), tt.want)
 			}
-			assert.Equalf(t, tt.want, ExtractUserIDFromContext(ctx), tt.want)
+
 		})
 	}
 }

@@ -44,11 +44,14 @@ func (sts *StorageTestSuite) SetupTest() {
 	cfg, err := config.ReadConfig()
 	require.NoError(sts.T(), err)
 
-	pool, err := testhelpers.ConnectDB(context.Background(), cfg.DatabaseDsn)
+	pool, err := ConnectDB(context.Background(), cfg.DatabaseDsn)
 	require.NoError(sts.T(), err)
 
 	// migrations
-	err = testhelpers.MigrateTables(pool)
+	conn, err := ConnectDBForMigration(cfg.DatabaseDsn)
+	require.NoError(sts.T(), err)
+
+	err = RunMigrations(conn)
 	require.NoError(sts.T(), err)
 
 	db := NewDBStorage(pool)
@@ -63,6 +66,10 @@ func (sts *StorageTestSuite) TearDownTest() {
 }
 
 func TestStorageTestSuite(t *testing.T) {
+	if testhelpers.IsGithubActions() {
+		// skip testcontainers for github actions
+		return
+	}
 	suite.Run(t, new(StorageTestSuite))
 }
 

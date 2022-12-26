@@ -32,11 +32,10 @@ func (c *SecretClient) AddData(ctx context.Context, data models.Data) error {
 		},
 	}
 
-	resp, err := c.service.AddData(ctx, request)
+	_, err := c.service.AddData(ctx, request)
 	if err != nil {
 		return err
 	}
-	log.Debug().Msgf("Client (AddData) response: %v", resp)
 
 	log.Debug().Msg("Client (AddData): done")
 	return nil
@@ -54,7 +53,6 @@ func (c *SecretClient) GetData(ctx context.Context) ([]models.Data, error) {
 	data := response.GetData()
 	var convertedData []models.Data
 	for _, secret := range data {
-		log.Printf("secret from server storage %v", secret)
 		convertedData = append(convertedData, models.Data{
 			ID:         secret.GetDataId(),
 			UserID:     "",
@@ -63,7 +61,6 @@ func (c *SecretClient) GetData(ctx context.Context) ([]models.Data, error) {
 		})
 	}
 
-	log.Debug().Msgf("Converted data : %v", convertedData)
 	log.Debug().Msg("Client (GetData): done")
 	return convertedData, err
 }
