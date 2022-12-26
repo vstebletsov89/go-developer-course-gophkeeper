@@ -1,7 +1,7 @@
 package testhelpers
 
 import (
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // load postgres driver
 	"github.com/rs/zerolog/log"
 	"os"
 )

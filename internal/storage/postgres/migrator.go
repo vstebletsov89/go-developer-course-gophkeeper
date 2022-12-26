@@ -10,6 +10,7 @@ import (
 //go:embed migrations/*.sql
 var embedMigrations embed.FS
 
+// RunMigrations runs goose migrations for current postgres db.
 func RunMigrations(db *sql.DB) error {
 	log.Info().Msg("Migration started...")
 
