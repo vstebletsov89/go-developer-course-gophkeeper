@@ -24,12 +24,12 @@ jobs:
         run: |
           cd cmd/server
           mkdir release
-          GOOS=windows GOARCH=amd64 go build -o app-amd64-windows.exe -ldflags "-X main.BuildVersion=v1.0.1 -X main.BuildCommit=${{ github.sha }} -X 'main.BuildDate=$(date +'%Y/%m/%d %H:%M:%S')'" main.go
+          GOOS=windows GOARCH=amd64 go build -o bin/app-amd64-windows.exe -ldflags "-X main.BuildVersion=v1.0.1 -X main.BuildCommit=${{ github.sha }} -X 'main.BuildDate=$(date +'%Y/%m/%d %H:%M:%S')'" main.go
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: release
+          name: copy artifacts
           path: |
-            cmd/server/release
-            cmd/client/release
+            cmd/server/bin
+            cmd/client/bin
