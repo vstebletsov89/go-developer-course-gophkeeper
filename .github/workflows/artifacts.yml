@@ -2,9 +2,7 @@ name: Artifacts
 
 on:
   push:
-    branches:
-      - main
-      - increment_2
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
