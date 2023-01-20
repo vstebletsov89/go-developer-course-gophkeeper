@@ -1,0 +1,41 @@
+name: Artifacts
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+
+      - name: Build server 64 bit (Windows, Linux, MacOS)
+        run: |
+          cd cmd/server
+          GOOS=windows GOARCH=amd64 go build -o bin/server-amd64-windows.exe -ldflags "-X main.BuildVersion=v1.0.1 -X main.BuildCommit=${{ github.sha }} -X 'main.BuildDate=$(date +'%Y/%m/%d %H:%M:%S')'" main.go
+          GOOS=darwin GOARCH=amd64 go build -o bin/server-amd64-darwin -ldflags "-X main.BuildVersion=v1.0.1 -X main.BuildCommit=${{ github.sha }} -X 'main.BuildDate=$(date +'%Y/%m/%d %H:%M:%S')'" main.go
+          GOOS=linux GOARCH=amd64 go build -o bin/server-amd64-linux -ldflags "-X main.BuildVersion=v1.0.1 -X main.BuildCommit=${{ github.sha }} -X 'main.BuildDate=$(date +'%Y/%m/%d %H:%M:%S')'" main.go
+
+      - name: Build client 64 bit (Windows, Linux, MacOS)
+        run: |
+          cd cmd/client
+          GOOS=windows GOARCH=amd64 go build -o bin/client-amd64-windows.exe -ldflags "-X main.BuildVersion=v1.0.1 -X main.BuildCommit=${{ github.sha }} -X 'main.BuildDate=$(date +'%Y/%m/%d %H:%M:%S')'" main.go
+          GOOS=darwin GOARCH=amd64 go build -o bin/client-amd64-darwin -ldflags "-X main.BuildVersion=v1.0.1 -X main.BuildCommit=${{ github.sha }} -X 'main.BuildDate=$(date +'%Y/%m/%d %H:%M:%S')'" main.go
+          GOOS=linux GOARCH=amd64 go build -o bin/client-amd64-linux -ldflags "-X main.BuildVersion=v1.0.1 -X main.BuildCommit=${{ github.sha }} -X 'main.BuildDate=$(date +'%Y/%m/%d %H:%M:%S')'" main.go
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            cmd/server/bin
+            cmd/client/bin

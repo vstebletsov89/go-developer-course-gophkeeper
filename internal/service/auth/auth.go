@@ -8,15 +8,15 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/models"
 	"golang.org/x/crypto/bcrypt"
-	"google.golang.org/grpc/metadata"
 	"time"
 )
 
+// UserContextType user context type.
+type UserContextType string
+
 const (
-	// AccessToken defines jwt token for current user.
-	AccessToken = "tokenInfo"
 	// UserCtx defines user context name.
-	UserCtx = "UserCtx"
+	UserCtx UserContextType = "UserCtx"
 )
 
 // JWTManager represents a structure for jwt manager.
@@ -32,7 +32,7 @@ type UserClaims struct {
 // JWT interface is the interface that must be implemented by JWTManager.
 type JWT interface {
 	GenerateToken(user string) (string, error)
-	ValidateToken(token string) error
+	ValidateToken(token string) (*UserClaims, error)
 }
 
 // NewJWTManager return an instance of JWTManager.
@@ -66,7 +66,7 @@ func (j *JWTManager) GenerateToken(user string) (string, error) {
 }
 
 // ValidateToken verifies that jwt token is valid.
-func (j *JWTManager) ValidateToken(accessToken string) error {
+func (j *JWTManager) ValidateToken(accessToken string) (*UserClaims, error) {
 	token, err := jwt.ParseWithClaims(
 		accessToken,
 		&UserClaims{},
@@ -81,16 +81,16 @@ func (j *JWTManager) ValidateToken(accessToken string) error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("invalid token: %w", err)
+		return nil, fmt.Errorf("invalid token: %w", err)
 	}
 
-	_, ok := token.Claims.(*UserClaims)
+	claims, ok := token.Claims.(*UserClaims)
 	if !ok {
-		return fmt.Errorf("invalid token claims")
+		return nil, fmt.Errorf("invalid token claims")
 	}
 
 	log.Debug().Msg("ValidateToken: OK")
-	return nil
+	return claims, nil
 }
 
 // EncryptPassword is used for encryption user password.
@@ -118,17 +118,13 @@ func IsUserAuthorized(user *models.User, userDB *models.User) (bool, error) {
 	return true, nil
 }
 
-// ExtractUserIDFromContext extracts userID from context metadata.
+// ExtractUserIDFromContext extracts userID from context.
 func ExtractUserIDFromContext(ctx context.Context) string {
-	// try to get userID from metadata
-	md, ok := metadata.FromIncomingContext(ctx)
+	// try to get userID from context
+	userID, ok := ctx.Value(UserCtx).(string)
 	if ok {
-		values := md.Get(UserCtx)
-		if len(values) > 0 {
-			userID := values[0]
-			log.Debug().Msgf("ExtractUserIDFromContext : '%s'", userID)
-			return userID
-		}
+		log.Debug().Msgf("ExtractUserIDFromContext: '%s'", userID)
+		return userID
 	}
 	return ""
 }

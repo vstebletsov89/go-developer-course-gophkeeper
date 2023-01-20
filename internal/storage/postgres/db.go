@@ -132,3 +132,14 @@ func (d *DBStorage) ReleaseStorage() {
 	d.db.Close()
 	log.Info().Msg("Storage released")
 }
+
+// ConnectDB connects to postgres database.
+func ConnectDB(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
+	log.Debug().Msg("Connect to DB...")
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		log.Error().Msgf("Failed to connect to database. Error: %v", err.Error())
+		return nil, err
+	}
+	return pool, nil
+}

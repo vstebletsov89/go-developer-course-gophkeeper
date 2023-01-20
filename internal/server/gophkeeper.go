@@ -3,12 +3,13 @@ package server
 
 import (
 	"context"
+	"database/sql"
+	_ "github.com/lib/pq" // load postgres driver
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/secure"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service"
 	"github.com/vstebletsov89/go-developer-course-gophkeeper/internal/service/auth"
@@ -58,6 +59,8 @@ func (g *GophkeeperServer) AddData(ctx context.Context, request *pb.AddDataReque
 
 // GetData gets all related data for current user.
 func (g *GophkeeperServer) GetData(ctx context.Context, request *pb.GetDataRequest) (*pb.GetDataResponse, error) {
+	log.Debug().Msgf("Server (GetData) request: %v", request)
+
 	userID := auth.ExtractUserIDFromContext(ctx)
 	var response pb.GetDataResponse
 
@@ -92,6 +95,8 @@ func (g *GophkeeperServer) DeleteData(ctx context.Context, request *pb.DeleteDat
 }
 
 // RunServer starts server application for gophkeeper service.
+//
+//nolint:funlen
 func RunServer(cfg *config.Config) error {
 	// init global logger
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
@@ -106,9 +111,9 @@ func RunServer(cfg *config.Config) error {
 	defer cancel()
 
 	// error group to control server instances
-	g, ctx := errgroup.WithContext(ctx)
+	g, _ := errgroup.WithContext(ctx)
 
-	db, err := connectDB(context.Background(), cfg.DatabaseDsn)
+	db, err := postgres.ConnectDB(context.Background(), cfg.DatabaseDsn)
 	if err != nil {
 		log.Debug().Msgf("connectDB error: %s", err)
 		return err
@@ -116,6 +121,27 @@ func RunServer(cfg *config.Config) error {
 
 	log.Info().Msg("Database connection: OK")
 	defer db.Close()
+
+	conn, err := postgres.ConnectDBForMigration(cfg.DatabaseDsn)
+	if err != nil {
+		return err
+	}
+	log.Info().Msg("Migration connection: OK")
+
+	defer func(conn *sql.DB) {
+		err := conn.Close()
+		if err != nil {
+			return
+		}
+	}(conn)
+
+	// run migrations
+	if cfg.EnableMigration {
+		err := postgres.RunMigrations(conn)
+		if err != nil {
+			return err
+		}
+	}
 
 	// create storage
 	storage := postgres.NewDBStorage(db)
@@ -190,14 +216,4 @@ func RunServer(cfg *config.Config) error {
 	}
 
 	return nil
-}
-
-func connectDB(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
-	log.Debug().Msg("Connect to DB...")
-	pool, err := pgxpool.New(ctx, databaseURL)
-	if err != nil {
-		log.Error().Msgf("Failed to connect to database. Error: %v", err.Error())
-		return nil, err
-	}
-	return pool, nil
 }

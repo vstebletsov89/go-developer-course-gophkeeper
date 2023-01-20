@@ -15,11 +15,12 @@ type User struct {
 // DataType enum type for data types (same as in grpc).
 type DataType int32
 
+// constants of data types for internal structures.
 const (
-	CREDENTIALS_TYPE DataType = 0
-	TEXT_TYPE        DataType = 1
-	BINARY_TYPE      DataType = 2
-	CARD_TYPE        DataType = 3
+	CredentialsType DataType = 0
+	TextType        DataType = 1
+	BinaryType      DataType = 2
+	CardType        DataType = 3
 )
 
 // Data represents a structure for data type.
@@ -53,7 +54,7 @@ func NewCredentials(description string, login string, password string) *Credenti
 
 // GetType getter for Credentials type.
 func (p Credentials) GetType() DataType {
-	return CREDENTIALS_TYPE
+	return CredentialsType
 }
 
 // GetJSON getter for Credentials binary data.
@@ -82,7 +83,7 @@ func NewText(description string, value string) *Text {
 
 // GetType getter for Text type.
 func (t Text) GetType() DataType {
-	return TEXT_TYPE
+	return TextType
 }
 
 // GetJSON getter for Text binary data.
@@ -111,7 +112,7 @@ func NewBinary(description string, value []byte) *Binary {
 
 // GetType getter for Binary type.
 func (b Binary) GetType() DataType {
-	return BINARY_TYPE
+	return BinaryType
 }
 
 // GetJSON getter for Binary binary data.
@@ -143,7 +144,7 @@ func NewCard(description string, name string, number string, date string, cvv st
 
 // GetType getter for Card type.
 func (c Card) GetType() DataType {
-	return CARD_TYPE
+	return CardType
 }
 
 // GetJSON getter for Card binary data.

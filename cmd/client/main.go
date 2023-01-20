@@ -7,9 +7,12 @@ import (
 )
 
 var (
+	// BuildVersion is a build version of client application.
 	BuildVersion = "N/A"
-	BuildDate    = "N/A"
-	BuildCommit  = "N/A"
+	// BuildDate is a build date of client application.
+	BuildDate = "N/A"
+	// BuildCommit is a build commit of client application.
+	BuildCommit = "N/A"
 )
 
 func main() {
